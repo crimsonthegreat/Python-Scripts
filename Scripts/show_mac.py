@@ -1,8 +1,7 @@
-import paramiko
+from cisco_functions import get_mac_table, user_input, ssh_to_switch
 import re
 import time
 import getpass
-from cisco_functions import user_input, ssh_to_switch, get_version
 
 def main():
     ip, username, password = user_input()
@@ -12,8 +11,9 @@ def main():
         return
     else:
         print("Connection successful")
-    get_version(shell)
-    # Check if the version matches the golden version
+    
+    # Get the MAC address table
+    get_mac_table(shell)
     shell.close()
 
 if __name__ == "__main__":
