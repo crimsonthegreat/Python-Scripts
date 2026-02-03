@@ -1,0 +1,141 @@
+#!/usr/bin/env python3
+import serial
+import threading
+import time
+import os
+import queue
+
+RFCOMM_DEV = "/dev/rfcomm0"
+RFCOMM_BAUD = 9600
+# Symlinks created via udev for physical devices
+ROUTER_SYMLINKS = ["/dev/router1", "/dev/router2", "/dev/router3", "/dev/router4"]
+
+rfc_queue = queue.Queue()
+
+router_serials = {}   # name -> serial.Serial object
+current_router = None
+lock = threading.Lock()
+
+# -------------------------
+# Wait for Windows RFCOMM connection
+# -------------------------
+while True:
+    try:
+        rfc = serial.Serial(RFCOMM_DEV, RFCOMM_BAUD, timeout=0.1)
+        print(f"RFCOMM {RFCOMM_DEV} connected")
+        break
+    except:
+        print(f"Waiting for RFCOMM device {RFCOMM_DEV}...")
+        time.sleep(2)
+
+# -------------------------
+# Hot-plug / unplug detection
+# -------------------------
+def update_routers_loop():
+    global current_router
+    while True:
+        connected_now = []
+        for dev in ROUTER_SYMLINKS:
+            name = os.path.basename(dev)
+            if os.path.exists(dev):
+                connected_now.append(name)
+                if name not in router_serials or not router_serials[name].is_open:
+                    try:
+                        router_serials[name] = serial.Serial(dev, 9600, timeout=0.1)
+                        print(f"Router {name} connected")
+                        # Start reading thread
+                        t = threading.Thread(target=read_from_router, args=(name,), daemon=True)
+                        t.start()
+                    except Exception as e:
+                        print(f"Failed to open {dev}: {e}")
+            else:
+                if name in router_serials:
+                    print(f"Router {name} unplugged")
+                    try:
+                        router_serials[name].close()
+                    except:
+                        pass
+                    del router_serials[name]
+
+        # Auto-select first router if current one disappeared
+        with lock:
+            if not current_router or current_router not in connected_now:
+                current_router = connected_now[0] if connected_now else None
+        time.sleep(1)
+
+# -------------------------
+# Router reader thread
+# -------------------------
+def read_from_router(name):
+    ser = router_serials[name]
+    while True:
+        try:
+            data = ser.read(1024)
+            if data:
+                # Normalize line endings
+                rfc_queue.put(data.replace(b'\n', b'\r\n'))
+        except:
+            pass
+        time.sleep(0.01)
+
+# -------------------------
+# RFCOMM writer thread
+# -------------------------
+def rfc_writer():
+    while True:
+        try:
+            data = rfc_queue.get()
+            if data:
+                rfc.write(data)
+        except:
+            pass
+        time.sleep(0.01)
+
+# -------------------------
+# RFCOMM input handler
+# -------------------------
+def handle_rfc_input():
+    global current_router
+    while True:
+        try:
+            data = rfc.read(1024)
+            if not data: continue
+            text = data.decode(errors='ignore').strip()
+            if text.startswith(">"):
+                target = text[1:].strip()
+                connected = list(router_serials.keys())
+                with lock:
+                    if target == "":
+                        # cycle
+                        if not connected: continue
+                        if current_router not in connected:
+                            current_router = connected[0]
+                        else:
+                            idx = connected.index(current_router)
+                            current_router = connected[(idx+1) % len(connected)]
+                        rfc_queue.put(f"\nSwitched to {current_router}\n".encode())
+                    elif target in router_serials:
+                        current_router = target
+                        rfc_queue.put(f"\nSwitched to {current_router}\n".encode())
+                    else:
+                        rfc_queue.put(f"\n{target} not connected\n".encode())
+            else:
+                # forward input to currently selected router
+                with lock:
+                    if current_router in router_serials:
+                        router_serials[current_router].write(data)
+        except:
+            pass
+        time.sleep(0.01)
+
+# -------------------------
+# Main
+# -------------------------
+print("Starting dynamic hot-plug Bluetooth router multiplexer...")
+
+# Start background thread for router hot-plug detection
+threading.Thread(target=update_routers_loop, daemon=True).start()
+threading.Thread(target=rfc_writer, daemon=True).start()
+
+# Handle RFCOMM input in main thread
+handle_rfc_input()
