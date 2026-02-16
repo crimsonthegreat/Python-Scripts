@@ -1,8 +1,3 @@
-import paramiko
-import re
-import time
-import getpass
-import pandas as pd
 from cisco_functions import user_input, ssh_to_switch, get_interface_status
 
 def main():

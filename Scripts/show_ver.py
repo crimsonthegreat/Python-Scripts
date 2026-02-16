@@ -1,7 +1,3 @@
-import paramiko
-import re
-import time
-import getpass
 from cisco_functions import user_input, ssh_to_switch, get_version
 
 def main():
