@@ -1,8 +1,4 @@
 from cisco_functions import user_input, ssh_to_switch, get_arp
-import re
-import time
-import getpass
-import pandas as pd
 
 def main():
     ip, username, password = user_input()

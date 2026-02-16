@@ -1,7 +1,4 @@
 from cisco_functions import get_mac_table, user_input, ssh_to_switch
-import re
-import time
-import getpass
 
 def main():
     ip, username, password = user_input()
