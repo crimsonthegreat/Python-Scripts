@@ -261,3 +261,48 @@ def get_arp(shell):
     
     except Exception as e:
         print(f"Failed to get ARP table: {e}")
+
+def sh_ip_int_br(shell):
+    """Send command to get the IP interface brief of the switch"""
+    try:
+        print("Getting IP interface brief...")
+        # Send command to disable paging
+        shell.send("terminal length 0\n")
+        # Wait 1 second for the command to be processed
+        time.sleep(1)
+        # Send command to get the IP interface brief
+        shell.send("show ip interface brief\n")
+        # Wait 2 seconds for the command to be processed
+        time.sleep(2)
+        # Receive the output
+        output = ""
+        # Max time to wait for output
+        timeout = 10
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            if shell.recv_ready():
+                output += shell.recv(65535).decode('utf-8')
+            # Check for switch prompt
+            if re.search(r'\S+[>#]\s*$', output, re.MULTILINE):
+                break
+            time.sleep(0.1)
+        
+        #Clean up the output
+        output = output.replace('\r', '')
+        lines = output.splitlines()
+        cleaned_lines = []
+        for line in lines:
+            line = line.strip()
+            # Skip empty lines, prompts, echoed commands, and header
+            if (line and
+                not re.match(r'^\S+[>#]', line) and  # Skip prompts (e.g., Core#)
+                not re.match(r'terminal\s+length\s+0', line) and  # Skip echoed command
+                not re.match(r'show\s+ip\s+interface\s+brief', line) and  # Skip echoed command
+                not re.match(r'Interface\s+IP-Address\s+OK\?\s+Method\s+Status\s+Protocol', line)):  # Skip header
+                cleaned_lines.append(line)
+        # Parse the IP interface brief
+        int_br_data = []
+        int_br_regex = re.compile(
+            r'^\s*(\S+)\s+(\d+\.\d+\.\d+\.\d+|unassigned)\s+(\S+)\s+(\S+)\s+(\S+)\s*$'
+        )
+
