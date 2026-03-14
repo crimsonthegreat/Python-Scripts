@@ -198,7 +198,7 @@ class Battery:
             self.battery_size = 65
 
 
-class ElectrictCar(Car):
+class ElectricCar(Car):
     """Represents aspects of a car, specific to electric vehicles"""
 
     def  __init__(self, make, model, year):
@@ -209,7 +209,7 @@ class ElectrictCar(Car):
         super().__init__(make, model, year)
         self.battery = Battery()
 
-my_leaf = ElectrictCar('nissan', 'leaf', 2024)
+my_leaf = ElectricCar('nissan', 'leaf', 2024)
 my_leaf.battery.describe_battery()
 my_leaf.battery.get_range()
 my_leaf.battery.upgrade_battery()
