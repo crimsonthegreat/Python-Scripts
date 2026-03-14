@@ -54,5 +54,5 @@ class Lottery:
             print("The winning lottery characters are:")
             self.lottery_selection()
         
-        print(f"Your numbers matched! Congradulations, it only took {count} "
+        print(f"Your numbers matched! Congradulations, it took {count} "
               "tries to win.")
