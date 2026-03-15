@@ -1,0 +1,5 @@
+In python you can create parent and child classes.
+In python you can iterate through data using loops.
+In python you can read text from a file and process it.
+In python you can match against the data from a file.
+In python you can make functions that help reduce code rewrite.
