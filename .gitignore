@@ -173,5 +173,5 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
-# Specific files
+# specific files
 Python Crash Course/Chapter 10/*.txt
