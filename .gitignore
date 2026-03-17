@@ -175,3 +175,5 @@ cython_debug/
 
 # specific files
 Python Crash Course/Chapter 10/*.txt
+.vscode
+.gitignore
