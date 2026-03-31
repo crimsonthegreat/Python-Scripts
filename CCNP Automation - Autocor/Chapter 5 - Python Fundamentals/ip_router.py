@@ -27,6 +27,7 @@ class Router:
                 "next_hop": ipaddress.IPv4Address(route['next_hop'])
             }
             print(f"  ⚙️ Populating FIB entry: {new_fib_entry}")
+            self.FIB.append(new_fib_entry)
     
     def show_ip_route(self):
         sh_ip_route_banner = """ 
@@ -40,6 +41,31 @@ Codes: L - local, C - connected, S - static, R - RIP, M - mobile, B - BGP
         for route in self.RIB:
             print(f"S     {route['network']}/{route['prefix_length']} via {route['next_hop']}")
 
+    def find_next_hop_address(self, dst_addr):
+        print(f"Size of FIB: {len(self.FIB)}")
+        addr_obj = ipaddress.IPv4Address(dst_addr)
+        best_candidate = None
+        for fib_entry in self.FIB:
+            if addr_obj in fib_entry['prefix']:
+                print(f"  🟡 Found a candidate prefix: {fib_entry['prefix']}")
+                if not best_candidate:
+                    best_candidate = fib_entry
+                elif fib_entry['prefix'].prefixlen > best_candidate['prefix'].prefixlen:
+                    best_candidate = fib_entry
+        if best_candidate:
+            print(f"  🟢 Longest prefix match for {dst_addr} is {best_candidate}")
+            return best_candidate['next_hop']
+        else:
+            print(f"  🔴 No matching route")
+
+    def incoming_packet(self, dst_addr):
+        print(f"⚠️ Received IP packet for {dst_addr}")
+        next_hop_address = self.find_next_hop_address(dst_addr)
+        if next_hop_address:
+            print(f"  🟢 Forwarding to {next_hop_address}")
+        else:
+            print("  🔴 Dropping packet")
+
 corerouter = Router('core-01')
 
 corerouter.add_route("10.10.10.0", 24, "10.0.0.1")
@@ -48,3 +74,12 @@ corerouter.add_route("10.100.8.0", 22, "10.0.0.9")
 corerouter.add_route("100.10.0.0", 18, "10.0.0.13")
 
 corerouter.show_ip_route()
+
+while True:
+    destination = input("Send packet to ip address: ")
+
+    try:
+        ipaddress.IPv4Address(destination)
+        corerouter.incoming_packet(destination)
+    except:
+        print("Invalid IPv4 Address")
