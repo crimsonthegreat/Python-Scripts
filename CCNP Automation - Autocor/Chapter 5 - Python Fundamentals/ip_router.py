@@ -66,20 +66,22 @@ Codes: L - local, C - connected, S - static, R - RIP, M - mobile, B - BGP
         else:
             print("  🔴 Dropping packet")
 
-corerouter = Router('core-01')
+if __name__ == "__main__":
+    
+    corerouter = Router('core-01')
 
-corerouter.add_route("10.10.10.0", 24, "10.0.0.1")
-corerouter.add_route("10.10.100.0", 23, '10.0.0.5')
-corerouter.add_route("10.100.8.0", 22, "10.0.0.9")
-corerouter.add_route("100.10.0.0", 18, "10.0.0.13")
+    corerouter.add_route("10.10.10.0", 24, "10.0.0.1")
+    corerouter.add_route("10.10.100.0", 23, '10.0.0.5')
+    corerouter.add_route("10.100.8.0", 22, "10.0.0.9")
+    corerouter.add_route("100.10.0.0", 18, "10.0.0.13")
 
-corerouter.show_ip_route()
+    corerouter.show_ip_route()
 
-while True:
-    destination = input("Send packet to ip address: ")
+    while True:
+        destination = input("Send packet to ip address: ")
 
-    try:
-        ipaddress.IPv4Address(destination)
-        corerouter.incoming_packet(destination)
-    except:
-        print("Invalid IPv4 Address")
+        try:
+            ipaddress.IPv4Address(destination)
+            corerouter.incoming_packet(destination)
+        except:
+            print("Invalid IPv4 Address")
