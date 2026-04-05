@@ -1,0 +1,502 @@
+[
+  {
+    "network": "13.120.0.0",
+    "prefix_length": 15,
+    "next_hop": "192.0.2.4"
+  },
+  {
+    "network": "41.0.0.0",
+    "prefix_length": 13,
+    "next_hop": "192.0.2.4"
+  },
+  {
+    "network": "40.4.153.108",
+    "prefix_length": 30,
+    "next_hop": "192.0.2.1"
+  },
+  {
+    "network": "126.92.0.0",
+    "prefix_length": 15,
+    "next_hop": "192.0.2.1"
+  },
+  {
+    "network": "29.128.160.0",
+    "prefix_length": 22,
+    "next_hop": "192.0.2.2"
+  },
+  {
+    "network": "167.0.0.0",
+    "prefix_length": 9,
+    "next_hop": "192.0.2.2"
+  },
+  {
+    "network": "118.23.108.0",
+    "prefix_length": 23,
+    "next_hop": "192.0.2.4"
+  },
+  {
+    "network": "94.128.0.0",
+    "prefix_length": 12,
+    "next_hop": "192.0.2.5"
+  },
+  {
+    "network": "10.243.64.0",
+    "prefix_length": 19,
+    "next_hop": "192.0.2.5"
+  },
+  {
+    "network": "44.219.128.0",
+    "prefix_length": 17,
+    "next_hop": "192.0.2.1"
+  },
+  {
+    "network": "196.177.0.0",
+    "prefix_length": 16,
+    "next_hop": "192.0.2.1"
+  },
+  {
+    "network": "87.120.0.0",
+    "prefix_length": 13,
+    "next_hop": "192.0.2.2"
+  },
+  {
+    "network": "192.67.181.0",
+    "prefix_length": 25,
+    "next_hop": "192.0.2.1"
+  },
+  {
+    "network": "207.0.0.0",
+    "prefix_length": 8,
+    "next_hop": "192.0.2.2"
+  },
+  {
+    "network": "183.192.0.0",
+    "prefix_length": 12,
+    "next_hop": "192.0.2.3"
+  },
+  {
+    "network": "1.219.138.128",
+    "prefix_length": 28,
+    "next_hop": "192.0.2.5"
+  },
+  {
+    "network": "105.174.192.0",
+    "prefix_length": 19,
+    "next_hop": "192.0.2.5"
+  },
+  {
+    "network": "156.192.0.0",
+    "prefix_length": 10,
+    "next_hop": "192.0.2.4"
+  },
+  {
+    "network": "99.84.128.0",
+    "prefix_length": 17,
+    "next_hop": "192.0.2.4"
+  },
+  {
+    "network": "26.23.76.0",
+    "prefix_length": 22,
+    "next_hop": "192.0.2.1"
+  },
+  {
+    "network": "89.142.119.0",
+    "prefix_length": 28,
+    "next_hop": "192.0.2.5"
+  },
+  {
+    "network": "212.150.228.0",
+    "prefix_length": 22,
+    "next_hop": "192.0.2.5"
+  },
+  {
+    "network": "221.207.188.0",
+    "prefix_length": 22,
+    "next_hop": "192.0.2.5"
+  },
+  {
+    "network": "161.128.0.0",
+    "prefix_length": 10,
+    "next_hop": "192.0.2.2"
+  },
+  {
+    "network": "118.192.0.0",
+    "prefix_length": 10,
+    "next_hop": "192.0.2.5"
+  },
+  {
+    "network": "59.240.25.32",
+    "prefix_length": 27,
+    "next_hop": "192.0.2.3"
+  },
+  {
+    "network": "179.229.192.0",
+    "prefix_length": 18,
+    "next_hop": "192.0.2.3"
+  },
+  {
+    "network": "84.96.0.0",
+    "prefix_length": 11,
+    "next_hop": "192.0.2.4"
+  },
+  {
+    "network": "167.248.0.0",
+    "prefix_length": 14,
+    "next_hop": "192.0.2.2"
+  },
+  {
+    "network": "175.120.0.0",
+    "prefix_length": 13,
+    "next_hop": "192.0.2.4"
+  },
+  {
+    "network": "4.70.64.0",
+    "prefix_length": 21,
+    "next_hop": "192.0.2.3"
+  },
+  {
+    "network": "121.15.128.0",
+    "prefix_length": 17,
+    "next_hop": "192.0.2.5"
+  },
+  {
+    "network": "179.220.9.192",
+    "prefix_length": 28,
+    "next_hop": "192.0.2.1"
+  },
+  {
+    "network": "134.156.128.0",
+    "prefix_length": 17,
+    "next_hop": "192.0.2.2"
+  },
+  {
+    "network": "22.238.24.0",
+    "prefix_length": 21,
+    "next_hop": "192.0.2.2"
+  },
+  {
+    "network": "32.185.121.128",
+    "prefix_length": 25,
+    "next_hop": "192.0.2.1"
+  },
+  {
+    "network": "46.248.80.0",
+    "prefix_length": 20,
+    "next_hop": "192.0.2.5"
+  },
+  {
+    "network": "167.238.0.0",
+    "prefix_length": 17,
+    "next_hop": "192.0.2.4"
+  },
+  {
+    "network": "193.136.0.0",
+    "prefix_length": 14,
+    "next_hop": "192.0.2.1"
+  },
+  {
+    "network": "100.32.88.0",
+    "prefix_length": 22,
+    "next_hop": "192.0.2.3"
+  },
+  {
+    "network": "95.0.0.0",
+    "prefix_length": 8,
+    "next_hop": "192.0.2.1"
+  },
+  {
+    "network": "21.201.208.0",
+    "prefix_length": 24,
+    "next_hop": "192.0.2.4"
+  },
+  {
+    "network": "11.233.60.0",
+    "prefix_length": 25,
+    "next_hop": "192.0.2.1"
+  },
+  {
+    "network": "129.220.0.0",
+    "prefix_length": 15,
+    "next_hop": "192.0.2.5"
+  },
+  {
+    "network": "206.24.150.0",
+    "prefix_length": 23,
+    "next_hop": "192.0.2.3"
+  },
+  {
+    "network": "82.19.0.0",
+    "prefix_length": 16,
+    "next_hop": "192.0.2.2"
+  },
+  {
+    "network": "183.253.100.192",
+    "prefix_length": 26,
+    "next_hop": "192.0.2.3"
+  },
+  {
+    "network": "206.40.71.16",
+    "prefix_length": 28,
+    "next_hop": "192.0.2.1"
+  },
+  {
+    "network": "62.168.64.0",
+    "prefix_length": 19,
+    "next_hop": "192.0.2.4"
+  },
+  {
+    "network": "200.24.0.0",
+    "prefix_length": 13,
+    "next_hop": "192.0.2.5"
+  },
+  {
+    "network": "63.103.56.92",
+    "prefix_length": 30,
+    "next_hop": "192.0.2.1"
+  },
+  {
+    "network": "182.227.0.0",
+    "prefix_length": 17,
+    "next_hop": "192.0.2.1"
+  },
+  {
+    "network": "140.0.0.0",
+    "prefix_length": 10,
+    "next_hop": "192.0.2.5"
+  },
+  {
+    "network": "75.0.0.0",
+    "prefix_length": 12,
+    "next_hop": "192.0.2.4"
+  },
+  {
+    "network": "11.254.0.0",
+    "prefix_length": 16,
+    "next_hop": "192.0.2.3"
+  },
+  {
+    "network": "147.199.15.224",
+    "prefix_length": 29,
+    "next_hop": "192.0.2.3"
+  },
+  {
+    "network": "96.163.64.0",
+    "prefix_length": 18,
+    "next_hop": "192.0.2.3"
+  },
+  {
+    "network": "116.24.0.0",
+    "prefix_length": 13,
+    "next_hop": "192.0.2.5"
+  },
+  {
+    "network": "81.32.0.0",
+    "prefix_length": 11,
+    "next_hop": "192.0.2.4"
+  },
+  {
+    "network": "223.0.0.0",
+    "prefix_length": 9,
+    "next_hop": "192.0.2.2"
+  },
+  {
+    "network": "75.86.0.0",
+    "prefix_length": 15,
+    "next_hop": "192.0.2.3"
+  },
+  {
+    "network": "136.216.0.0",
+    "prefix_length": 13,
+    "next_hop": "192.0.2.3"
+  },
+  {
+    "network": "165.82.48.0",
+    "prefix_length": 20,
+    "next_hop": "192.0.2.5"
+  },
+  {
+    "network": "21.64.0.0",
+    "prefix_length": 12,
+    "next_hop": "192.0.2.2"
+  },
+  {
+    "network": "200.165.220.0",
+    "prefix_length": 26,
+    "next_hop": "192.0.2.4"
+  },
+  {
+    "network": "179.9.132.204",
+    "prefix_length": 30,
+    "next_hop": "192.0.2.2"
+  },
+  {
+    "network": "145.191.89.112",
+    "prefix_length": 28,
+    "next_hop": "192.0.2.4"
+  },
+  {
+    "network": "118.10.32.0",
+    "prefix_length": 19,
+    "next_hop": "192.0.2.3"
+  },
+  {
+    "network": "200.128.0.0",
+    "prefix_length": 10,
+    "next_hop": "192.0.2.4"
+  },
+  {
+    "network": "76.181.245.76",
+    "prefix_length": 30,
+    "next_hop": "192.0.2.1"
+  },
+  {
+    "network": "52.192.0.0",
+    "prefix_length": 11,
+    "next_hop": "192.0.2.3"
+  },
+  {
+    "network": "170.152.0.0",
+    "prefix_length": 16,
+    "next_hop": "192.0.2.5"
+  },
+  {
+    "network": "201.96.128.0",
+    "prefix_length": 17,
+    "next_hop": "192.0.2.2"
+  },
+  {
+    "network": "162.152.0.0",
+    "prefix_length": 13,
+    "next_hop": "192.0.2.5"
+  },
+  {
+    "network": "90.123.235.0",
+    "prefix_length": 24,
+    "next_hop": "192.0.2.1"
+  },
+  {
+    "network": "109.72.128.0",
+    "prefix_length": 19,
+    "next_hop": "192.0.2.2"
+  },
+  {
+    "network": "212.123.36.0",
+    "prefix_length": 23,
+    "next_hop": "192.0.2.4"
+  },
+  {
+    "network": "59.240.0.0",
+    "prefix_length": 16,
+    "next_hop": "192.0.2.3"
+  },
+  {
+    "network": "190.53.128.0",
+    "prefix_length": 17,
+    "next_hop": "192.0.2.4"
+  },
+  {
+    "network": "160.225.97.0",
+    "prefix_length": 24,
+    "next_hop": "192.0.2.3"
+  },
+  {
+    "network": "89.163.221.128",
+    "prefix_length": 29,
+    "next_hop": "192.0.2.3"
+  },
+  {
+    "network": "153.224.0.0",
+    "prefix_length": 15,
+    "next_hop": "192.0.2.4"
+  },
+  {
+    "network": "68.151.160.0",
+    "prefix_length": 26,
+    "next_hop": "192.0.2.1"
+  },
+  {
+    "network": "223.83.1.224",
+    "prefix_length": 29,
+    "next_hop": "192.0.2.5"
+  },
+  {
+    "network": "218.5.76.128",
+    "prefix_length": 25,
+    "next_hop": "192.0.2.5"
+  },
+  {
+    "network": "97.253.95.136",
+    "prefix_length": 29,
+    "next_hop": "192.0.2.5"
+  },
+  {
+    "network": "126.247.137.0",
+    "prefix_length": 25,
+    "next_hop": "192.0.2.1"
+  },
+  {
+    "network": "89.222.120.0",
+    "prefix_length": 21,
+    "next_hop": "192.0.2.4"
+  },
+  {
+    "network": "51.7.0.0",
+    "prefix_length": 16,
+    "next_hop": "192.0.2.3"
+  },
+  {
+    "network": "97.160.0.0",
+    "prefix_length": 11,
+    "next_hop": "192.0.2.5"
+  },
+  {
+    "network": "165.28.16.0",
+    "prefix_length": 20,
+    "next_hop": "192.0.2.3"
+  },
+  {
+    "network": "74.12.212.0",
+    "prefix_length": 22,
+    "next_hop": "192.0.2.4"
+  },
+  {
+    "network": "135.40.0.0",
+    "prefix_length": 14,
+    "next_hop": "192.0.2.1"
+  },
+  {
+    "network": "56.20.137.0",
+    "prefix_length": 24,
+    "next_hop": "192.0.2.1"
+  },
+  {
+    "network": "216.26.0.0",
+    "prefix_length": 15,
+    "next_hop": "192.0.2.2"
+  },
+  {
+    "network": "94.191.2.0",
+    "prefix_length": 23,
+    "next_hop": "192.0.2.4"
+  },
+  {
+    "network": "56.118.159.0",
+    "prefix_length": 24,
+    "next_hop": "192.0.2.5"
+  },
+  {
+    "network": "102.146.192.0",
+    "prefix_length": 19,
+    "next_hop": "192.0.2.4"
+  },
+  {
+    "network": "102.146.200.128",
+    "prefix_length": 26,
+    "next_hop": "192.0.2.4"
+  },
+  {
+    "network": "102.128.0.0",
+    "prefix_length": 10,
+    "next_hop": "192.0.2.4"
+  }
+]
