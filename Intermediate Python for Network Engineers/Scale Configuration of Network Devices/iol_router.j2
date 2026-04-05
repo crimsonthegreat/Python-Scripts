@@ -1,0 +1,17 @@
+{# General config #}
+hostname IOL_Router_{{ X }}
+{# Interfaces #}
+interface Ethernet0/1
+ ip address 10.10.100.{{ X }} 255.255.255.0
+ no shutdown
+interface loopback100
+ ip address {{ loopback100 }} 255.255.255.255
+ no shutdown
+{# Routing #}
+router ospf 1
+ network 10.10.100.{{ X }} 0.0.0.255 area 0
+ network {{ loopback100 }} 0.0.0.0 area 0
+{# ACLs #}
+ip access-list standard 1
+ 10 deny 10.10.10.10 0.0.0.0
+ 20 permit any
