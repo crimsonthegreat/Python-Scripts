@@ -1,0 +1,4 @@
+Router1,10.10.10.1,Online
+Router2,10.10.20.1,Online
+Switch1,10.10.10.11,Online
+Switch2,10.10.20.11,Offline
