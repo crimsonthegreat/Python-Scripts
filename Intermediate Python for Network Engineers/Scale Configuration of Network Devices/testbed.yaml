@@ -1,0 +1,27 @@
+devices:
+  IOL_Router_1:
+    connections:
+      cli:
+        ip: 10.117.44.153
+        protocol: ssh
+    credentials:
+      default:
+        password: 1234qwer
+        username: cisco
+      enable:
+        password: 1234qwer
+    os: iosxe
+    type: iosxe
+  IOL_Router_2:
+    connections:
+      cli:
+        ip: 10.117.44.154
+        protocol: ssh
+    credentials:
+      default:
+        password: 1234qwer
+        username: cisco
+      enable:
+        password: 1234qwer
+    os: iosxe
+    type: iosxe
