@@ -10,8 +10,7 @@ try:
     parsed_output = device.parse('show ip interface brief')
     pprint.pprint(parsed_output)
 
-    interfaces = parsed_output.get('interface', {})
-    intf = interfaces.get('Ethernet0/0', {})
+    intf = parsed_output['interface']['Ethernet0/0']
     if intf.get('status')  == 'up' and intf.get('protocol') == 'up':
         print("Interface is up and operational")
     else:
