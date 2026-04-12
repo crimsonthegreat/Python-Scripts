@@ -6,7 +6,7 @@ testbed = load('testbed.yaml')
 device = testbed.devices['IOL_Router_1']
 
 try:
-    device.connect()
+    device.connect(log_stdout=False)
     parsed_output = device.parse('show ip interface brief')
     pprint.pprint(parsed_output)
 
