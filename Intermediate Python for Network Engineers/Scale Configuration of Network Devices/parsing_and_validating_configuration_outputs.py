@@ -12,9 +12,6 @@ try:
 
     interfaces = parsed_output.get('interface', {})
     intf = interfaces.get('Ethernet0/0', {})
-    print(intf)
-    print(intf.get('status'))
-    print(intf.get('protocol'))
     if intf.get('status')  == 'up' and intf.get('protocol') == 'up':
         print("Interface is up and operational")
     else:
@@ -30,4 +27,22 @@ error 'TypeError: 'Device' object is not callable' meaning the device is not abl
 and instead needs to be a hard coded connect and disconnect.
 Additionally, the intf section does not work because the parse stores all of the interfaces under the key interface,
 which has to be pulled first and then you can get the specific interface info you are looking for.
+
+Cisco's code:
+
+with device as dev:
+    parsed_output = dev.parse('show ip interface brief')
+    print(parsed_output)
+
+Fails with - TypeError: 'Device' object does not support the context manager protocol
+
+Cisco's code:
+
+    intf = interfaces.get('Ethernet0/0', {})
+    if intf.get('status')  == 'up' and intf.get('protocol') == 'up':
+        print("Interface is up and operational")
+    else:
+        print("Interface is down or has issues")
+
+Returns - Interface is down or has issues
 """
