@@ -2,7 +2,7 @@ devices:
   IOL_Router_1:
     connections:
       cli:
-        ip: 10.117.44.153
+        ip: 192.168.1.1
         protocol: ssh
     credentials:
       default:
@@ -15,7 +15,7 @@ devices:
   IOL_Router_2:
     connections:
       cli:
-        ip: 10.117.44.154
+        ip: 192.168.1.2
         protocol: ssh
     credentials:
       default:
