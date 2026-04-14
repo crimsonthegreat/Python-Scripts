@@ -1,9 +1,14 @@
 import logging
+from logging.handlers import TimedRotatingFileHandler
 
 LOG_FORMAT = f'%(asctime)s %(levelname)s %(name)s: %(message)s'
 logger = logging.getLogger(__name__)
+handler = TimedRotatingFileHandler('example.log', when='D', interval=1, backupCount=2)
 
-logging.basicConfig(filename='example.log', level=logging.INFO, filemode='a', format=LOG_FORMAT)
+formatter = logging.Formatter(LOG_FORMAT)
+handler.setFormatter(formatter)
+
+logging.basicConfig(level=logging.INFO, handlers=[handler])
 
 logger.debug("My debug message")
 logger.info("My info message")
