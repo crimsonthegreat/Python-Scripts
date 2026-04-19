@@ -1,0 +1,7 @@
+Name,Management IP,Device Type,Status
+Router1,10.10.10.1,Router,Online
+Router2,10.10.20.1,Router,Online
+Switch1,10.10.10.11,Switch,Online
+Switch2,10.10.20.11,Switch,Offline
+Firewall1,10.100.1.1,Firewall,Online
+Firewall2,10.100.2.1,Firewall,Offline
