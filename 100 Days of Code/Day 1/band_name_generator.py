@@ -19,7 +19,7 @@ while True:
     break_loop(born)
 
     # Get user input on favorite pet
-    pet = input("What was your favor pet growing up: ")
+    pet = input("What was your favor pet's name growing up: ")
 
     # Check if the user wants to quit by checking for q or Q
     break_loop(pet)
