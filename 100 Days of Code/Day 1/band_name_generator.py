@@ -13,13 +13,13 @@ while True:
     print("Type q at any time to exit...")
 
     # Get user input for place of birth
-    born = input("Where were you born: ")
+    born = input("What city were you born in:\n")
 
     # Check if the user wants to quit by checking for q or Q
     break_loop(born)
 
     # Get user input on favorite pet
-    pet = input("What was your favor pet's name growing up: ")
+    pet = input("What was your favorite pet's name growing up:\n")
 
     # Check if the user wants to quit by checking for q or Q
     break_loop(pet)
