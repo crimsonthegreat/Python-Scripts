@@ -1,5 +1,3 @@
-from decimal import Decimal
-
 def break_loop(user_input):
     if user_input == 'q' or user_input == 'Q':
         quit()
