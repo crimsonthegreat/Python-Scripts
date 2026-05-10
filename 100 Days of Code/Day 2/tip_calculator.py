@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 def break_loop(user_input):
     if user_input == 'q' or user_input == 'Q':
         quit()
@@ -10,7 +12,7 @@ def user_input(message):
         break_loop(user_input)
 
         try:
-            user_input = int(user_input)
+            user_input = float(user_input)
             break
         except ValueError:
             print("Please enter a number!")
@@ -29,13 +31,13 @@ while True:
     tip = user_input(tip_msg)
 
     bill *= ((tip * .01) + 1)
-    print(f"The total bill with a {tip}% is {bill}")
+    print(f"The total bill with a {tip}% is ${bill}")
 
     num_people_msg = "How many people should the bill be split between?\n"
     num_people = user_input(num_people_msg)
 
     bill /= num_people
-    print(f"The bill per person when split between {num_people} is {bill}")  
+    print(f"The bill per person when split between {num_people} is ${bill}")  
 
     while True:
         cont = input("Would you like to calculate another bill? [y/n]:\n")
