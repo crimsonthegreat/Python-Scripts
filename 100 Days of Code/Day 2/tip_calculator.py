@@ -35,13 +35,11 @@ while True:
     num_people = user_input(num_people_msg)
 
     bill /= num_people
-    print(f"The bill per person when split between {num_people} is {bill}")
-
-    
+    print(f"The bill per person when split between {num_people} is {bill}")  
 
     while True:
         cont = input("Would you like to calculate another bill? [y/n]:\n")
-        
+
         if cont == 'y' or cont == 'Y':
             break
         elif cont == 'n' or cont == 'N':
