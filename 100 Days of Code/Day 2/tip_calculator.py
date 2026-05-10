@@ -34,10 +34,11 @@ while True:
     print(f"The total bill with a {tip}% is ${bill}")
 
     num_people_msg = "How many people should the bill be split between?\n"
-    num_people = user_input(num_people_msg)
+    num_people = int(user_input(num_people_msg))
 
     bill /= num_people
-    print(f"The bill per person when split between {num_people} is ${bill}")  
+    print(f"The bill per person when split between {num_people} is "
+          f"${round(bill, 2)}")  
 
     while True:
         cont = input("Would you like to calculate another bill? [y/n]:\n")
