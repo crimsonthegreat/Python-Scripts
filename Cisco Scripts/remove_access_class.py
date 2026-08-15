@@ -17,7 +17,7 @@ def process_device(device, username, password, acl_name):
 
     print(f"\nChecking reachability for {ip}...")
 
-    if not acl.ping_device(ip):
+    if not bf.ping_device(ip):
 
         print(f"{ip} is not reachable.")
 
@@ -48,20 +48,23 @@ def process_device(device, username, password, acl_name):
                 ""
             )
 
-            print(f"Connected to {hostname} ({ip})")
+            print(f"\nConnected to {hostname} ({ip})")
 
-            print("Showing existing VTY line configuration")
+            print("\nShowing existing VTY line configuration\n")
 
-            acl_reference = acl.get_vty_acl_references(ssh=ssh, acl_name=acl_name)
+            acl_references = acl.get_vty_acl_references(ssh=ssh, acl_name=acl_name)
 
-            print(acl_reference)
+            for reference in acl_references:
+                print(reference["line"])
+                print(reference["command"])
+                print("!")
 
             bf.user_input("\nWould you like to remove the ACL from the VTY line? [y/n]: ")
 
-            acl.remove_vty_acl_references(ssh=ssh, references=acl_reference)
+            acl.remove_vty_acl_references(ssh=ssh, references=acl_references)
 
             # Save
-            print("\nSaving configuration...")
+            print("\nSaving configuration...\n")
 
             save_output = bf.save_config(ssh=ssh)
 
@@ -118,6 +121,10 @@ def main():
 
     devices = bf.get_devices(inventory_file=args.inventory_file)
 
+    selected_acl_type = acl.get_acl_type()
+
+    acl_name = acl.get_acl_name(selected_acl_type=selected_acl_type)
+
     if not devices:
         print("No valid devices to process.")
         return
@@ -127,4 +134,65 @@ def main():
     for device in devices:
         print(f"  {device['ip']}")
 
+    results = []
     
+    # Process every device
+    for device in devices:
+
+        result = process_device(
+            device=device,
+            username=username,
+            password=password,
+            acl_name=acl_name,
+        )
+
+        results.append(result)
+
+    # Final report
+    print("\n")
+    print("=" * 60)
+    print("ACCESS CLASS REMOVAL UPDATE SUMMARY")
+    print("=" * 60)
+
+    successful = [
+        result
+        for result in results
+        if result["status"] == "success"
+    ]
+
+    failed = [
+        result
+        for result in results
+        if result["status"] == "failed"
+    ]
+
+    print(
+        f"\nSuccessful: {len(successful)}"
+    )
+
+    for result in successful:
+
+        hostname = result.get(
+            "hostname",
+            "Unknown"
+        )
+
+        print(
+            f"  [SUCCESS] "
+            f"{hostname} - {result['ip']}"
+        )
+
+    print(
+        f"\nFailed: {len(failed)}"
+    )
+
+    for result in failed:
+
+        print(
+            f"  [FAILED] "
+            f"{result['ip']} - "
+            f"{result['reason']}"
+        )
+
+if __name__ == "__main__":
+    main()
