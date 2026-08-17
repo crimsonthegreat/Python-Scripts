@@ -54,14 +54,62 @@ def process_device(device, username, password, acl_name):
 
             acl_references = acl.get_vty_acl_references(ssh=ssh, acl_name=acl_name)
 
-            for reference in acl_references:
-                print(reference["line"])
-                print(reference["command"])
-                print("!")
+            if not acl_references:
 
-            bf.user_input("\nWould you like to remove the ACL from the VTY line? [y/n]: ")
+                print(f"\nACL '{acl_name}' is not applied to any VTY lines.")
 
-            acl.remove_vty_acl_references(ssh=ssh, references=acl_references)
+                while True:
+                    user_input = input("\nWould you like to add an access-class to the VTY lines? [y/n]: ").lower().strip()
+            
+                    if user_input in ("n", "no"):
+                        print(f"Skipping {hostname} ({ip}).")
+                        
+                        return {
+                            "ip": ip,
+                            "hostname": hostname,
+                            "status": "skipped",
+                            "reason": "ACL not applied to VTY lines"
+                        }
+                    
+                    elif user_input in ("y","yes"):
+                        acl.add_vty_acl_references(ssh=ssh, acl_name=acl_name)
+                        break
+
+                    elif user_input == "q":
+                        quit()
+
+                    else:
+                        print("Please enter y or n to continue!")
+
+            else:
+                print("\nACL is currently applied to the following VTY lines:")
+
+                for reference in acl_references:
+                    print(reference["line"])
+                    print(reference["command"])
+                    print("!")
+                    
+                while True:
+                    user_input = input("\nWould you like to remove the ACL from the VTY line? [y/n]: ").lower().strip()
+            
+                    if user_input in ("n", "no"):
+                        print(f"Skipping {hostname} ({ip}).")
+                        
+                        return {
+                            "ip": ip,
+                            "hostname": hostname,
+                            "status": "skipped",
+                            "reason": "ACL not applied to VTY lines"
+                        }
+                    elif user_input in ("y","yes"):
+                        acl.remove_vty_acl_references(ssh=ssh, references=acl_references)
+                        break
+
+                    elif user_input == "q":
+                        quit()
+
+                    else:
+                        print("Please enter y or n to continue!")
 
             # Save
             print("\nSaving configuration...\n")
@@ -160,6 +208,12 @@ def main():
         if result["status"] == "success"
     ]
 
+    skipped = [
+            result
+            for result in results
+            if result["status"] == "skipped"
+        ]
+    
     failed = [
         result
         for result in results
@@ -179,6 +233,22 @@ def main():
 
         print(
             f"  [SUCCESS] "
+            f"{hostname} - {result['ip']}"
+        )
+
+    print(
+        f"\nSkipped: {len(skipped)}"
+    )
+
+    for result in skipped:
+
+        hostname = result.get(
+            "hostname",
+            "Unknown"
+        )
+
+        print(
+            f"  [SKIPPED] "
             f"{hostname} - {result['ip']}"
         )
 

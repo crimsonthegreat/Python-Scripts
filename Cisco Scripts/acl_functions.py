@@ -355,3 +355,15 @@ def remove_vty_acl_references(ssh, references):
         outputs.append(output)
 
     return outputs
+
+def add_vty_acl_references(ssh, acl_name):
+    """Remove ACL access-class commands from VTY lines."""
+
+    command_set = [
+        "line vty 0 15",
+        f"access-class {acl_name} in"
+    ]
+
+    output = ssh.send_config_set(command_set)
+
+    return output

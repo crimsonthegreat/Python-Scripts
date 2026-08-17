@@ -191,7 +191,7 @@ def load_csv_devices(filename):
     return devices
 
 def load_yaml_devices(filename):
-    """Load devices from YAML."""
+    """Load devices from site-based YAML inventory."""
 
     devices = []
 
@@ -199,40 +199,63 @@ def load_yaml_devices(filename):
         with open(filename, mode="r") as file:
             data = yaml.safe_load(file)
 
-        if not data or "devices" not in data:
+        if not data or "sites" not in data:
             print(
-                "ERROR: YAML file must contain a 'devices' section."
+                "ERROR: YAML file must contain a top-level 'sites' section."
             )
             return []
 
-        for index, device in enumerate(
-            data["devices"],
-            start=1
-        ):
-            ip = str(
-                device.get("ip", "")
-            ).strip()
+        for site_name, site_data in data["sites"].items():
 
-            try:
-                ipaddress.IPv4Address(ip)
-
-            except ipaddress.AddressValueError:
-                print(f"Skipping invalid IP '{ip}' in YAML device {index}.")
+            if not site_data:
                 continue
 
-            device_type = device.get("device_type", "cisco_ios")
+            site_devices = site_data.get("devices", [])
 
-            device["ip"] = ip
-            device["device_type"] = device_type
+            for device in site_devices:
 
-            devices.append(device)
+                ip = str(
+                    device.get("ip", "")
+                ).strip()
+
+                try:
+                    ipaddress.IPv4Address(ip)
+
+                except ipaddress.AddressValueError:
+                    print(
+                        f"Skipping invalid IP '{ip}' "
+                        f"at site '{site_name}'."
+                    )
+                    continue
+
+                # Default device type if omitted
+                device_type = device.get(
+                    "device_type",
+                    "cisco_ios"
+                )
+
+                # Preserve all YAML fields
+                device["ip"] = ip
+                device["device_type"] = device_type
+
+                # Automatically populate site
+                device.setdefault(
+                    "site",
+                    site_name
+                )
+
+                devices.append(device)
 
     except FileNotFoundError:
-        print(f"ERROR: File '{filename}' not found.")
+        print(
+            f"ERROR: File '{filename}' not found."
+        )
         return []
 
     except yaml.YAMLError as e:
-        print(f"ERROR parsing YAML file: {e}")
+        print(
+            f"ERROR parsing YAML file: {e}"
+        )
         return []
 
     return devices
