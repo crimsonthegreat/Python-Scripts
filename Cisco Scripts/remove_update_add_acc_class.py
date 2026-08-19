@@ -1,12 +1,12 @@
 import netmiko
 import base_functions as bf
 import acl_functions as acl
+from acl_importer import build_acl_command_sets, load_acl_rules
 
 print("\n" + "=" * 60)
 print("Update ACL on VTY Lines" + "\n" + "=" * 60)
 
-
-def process_device(device, username, password, acl_name):
+def process_device(device, username, password, acl_name, acl_type, acl_commands, dry_run=False):
     """Process one device using one SSH connection."""
 
     ip = device["ip"]
@@ -52,35 +52,15 @@ def process_device(device, username, password, acl_name):
 
             print("\nShowing existing VTY line configuration\n")
 
+            vty_lines = acl.get_vty_lines(ssh=ssh)
+
+            if not vty_lines:
+                raise ValueError("No VTY line configuration was found on the device.")
+
             acl_references = acl.get_vty_acl_references(ssh=ssh, acl_name=acl_name)
 
             if not acl_references:
-
                 print(f"\nACL '{acl_name}' is not applied to any VTY lines.")
-
-                while True:
-                    user_input = input("\nWould you like to add an access-class to the VTY lines? [y/n]: ").lower().strip()
-            
-                    if user_input in ("n", "no"):
-                        print(f"Skipping {hostname} ({ip}).")
-                        
-                        return {
-                            "ip": ip,
-                            "hostname": hostname,
-                            "status": "skipped",
-                            "reason": "ACL not applied to VTY lines"
-                        }
-                    
-                    elif user_input in ("y","yes"):
-                        acl.add_vty_acl_references(ssh=ssh, acl_name=acl_name)
-                        break
-
-                    elif user_input == "q":
-                        quit()
-
-                    else:
-                        print("Please enter y or n to continue!")
-
             else:
                 print("\nACL is currently applied to the following VTY lines:")
 
@@ -88,29 +68,55 @@ def process_device(device, username, password, acl_name):
                     print(reference["line"])
                     print(reference["command"])
                     print("!")
-                    
-                while True:
-                    user_input = input("\nWould you like to remove the ACL from the VTY line? [y/n]: ").lower().strip()
+
+            if dry_run:
+                print("\nDRY RUN - planned configuration sequence:")
+
+                for reference in acl_references:
+                    print(f"  {reference['line']}")
+                    print(f"  no {reference['command']}")
+
+                print(f"  no ip access-list {acl_type} {acl_name}")
+
+                for command in acl_commands:
+                    print(f"  {command}")
+
+                for line in vty_lines:
+                    print(f"  {line}")
+                    print(f"  access-class {acl_name} in")
+
+                return {
+                    "ip": ip,
+                    "hostname": hostname,
+                    "status": "success",
+                    "reason": "Dry run completed"
+                }
+
+            if acl_references:
+                print("\nRemoving existing VTY access-class references...")
+                acl.remove_vty_acl_references(
+                    ssh=ssh,
+                    references=acl_references
+                )
+
+            print(f"\nRemoving existing ACL '{acl_name}'...")
+            acl.remove_acl(
+                ssh=ssh,
+                acl_name=acl_name,
+                acl_type=acl_type
+            )
+
+            print(f"\nApplying updated ACL '{acl_name}'...")
+            ssh.send_config_set(acl_commands)
+
+            print("\nApplying the ACL to all VTY lines...")
+            acl.apply_acl_to_all_vty_lines(
+                    ssh=ssh,
+                    acl_name=acl_name,
+                    vty_lines=vty_lines,
+                    direction="in"
+            )
             
-                    if user_input in ("n", "no"):
-                        print(f"Skipping {hostname} ({ip}).")
-                        
-                        return {
-                            "ip": ip,
-                            "hostname": hostname,
-                            "status": "skipped",
-                            "reason": "ACL not applied to VTY lines"
-                        }
-                    elif user_input in ("y","yes"):
-                        acl.remove_vty_acl_references(ssh=ssh, references=acl_references)
-                        break
-
-                    elif user_input == "q":
-                        quit()
-
-                    else:
-                        print("Please enter y or n to continue!")
-
             # Save
             print("\nSaving configuration...\n")
 
@@ -165,13 +171,33 @@ def main():
 
     args = bf.get_arguments()
 
+    if not args.acl_rules_file:
+        print(
+            "ERROR: An ACL rules file is required.\n"
+            "Usage: python remove_update_add_acc_class.py "
+            "<inventory.yaml|csv> <acl_rules.yaml|csv>"
+        )
+        return
+
+    try:
+        imported_rules = load_acl_rules(args.acl_rules_file)
+        command_sets = build_acl_command_sets(imported_rules)
+    except (FileNotFoundError, OSError, ValueError) as error:
+        print(f"ERROR loading ACL rules: {error}")
+        return
+
+    if len(command_sets) != 1:
+        print(
+            "ERROR: This workflow requires exactly one ACL in the ACL rules file. "
+            f"Found {len(command_sets)}."
+        )
+        return
+
+    (acl_type, acl_name), acl_commands = next(iter(command_sets.items()))
+
     username,password = bf.get_credentials()
 
     devices = bf.get_devices(inventory_file=args.inventory_file)
-
-    selected_acl_type = acl.get_acl_type()
-
-    acl_name = acl.get_acl_name(selected_acl_type=selected_acl_type)
 
     if not devices:
         print("No valid devices to process.")
@@ -192,6 +218,9 @@ def main():
             username=username,
             password=password,
             acl_name=acl_name,
+            acl_type=acl_type,
+            acl_commands=acl_commands,
+            dry_run=args.dry_run,
         )
 
         results.append(result)

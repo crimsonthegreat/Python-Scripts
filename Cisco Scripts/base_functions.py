@@ -29,10 +29,29 @@ def get_arguments():
     )
 
     parser.add_argument(
-        "-f",
-        "--file",
+    "acl_rules_file",
+    nargs="?",
+    help="Optional CSV or YAML file containing ACL rules"
+    )
+
+    parser.add_argument(
+        "-i",
+        "--inventory",
         dest="inventory_file_explicit",
         help="CSV or YAML inventory file"
+    )
+
+    parser.add_argument(
+        "-a",
+        "--acl-rules",
+        dest="acl_rules_file_explicit",
+        help="CSV or YAML file containing ACL rules"
+    )
+
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show imported ACL commands without changing or saving the switch"
     )
 
     args = parser.parse_args()
@@ -40,13 +59,23 @@ def get_arguments():
     # Prevent both from being used at the same time
     if args.inventory_file and args.inventory_file_explicit:
         parser.error(
-            "Specify the CSV file either positionally or with --csv, not both."
+            "Specify the CSV or YAML file either positionally or with --inventory, not both."
+        )
+
+    if args.acl_rules_file and args.acl_rules_file_explicit:
+        parser.error(
+            "Specify the ACL rules file either positionally or with --acl-rules, not both."
         )
 
     # Normalize into one variable
     args.inventory_file = (
         args.inventory_file_explicit
         or args.inventory_file
+    )
+
+    args.acl_rules_file = (
+        args.acl_rules_file_explicit
+        or args.acl_rules_file
     )
 
     return args
@@ -139,59 +168,8 @@ def load_csv_devices(filename):
 
     return devices
 
-def load_csv_devices(filename):
-    """Load devices from CSV."""
-
-    devices = []
-
-    try:
-        with open(filename, mode="r", newline="") as file:
-
-            reader = csv.DictReader(file)
-
-            if not reader.fieldnames or "ip" not in reader.fieldnames:
-                print(
-                    "ERROR: CSV must contain an 'ip' column."
-                )
-                return []
-
-            for row_number, row in enumerate(reader, start=2):
-
-                ip = row["ip"].strip()
-
-                try:
-                    ipaddress.IPv4Address(ip)
-
-                except ipaddress.AddressValueError:
-                    print(
-                        f"Skipping invalid IP '{ip}' "
-                        f"on row {row_number}."
-                    )
-                    continue
-
-                device_type = row.get(
-                    "device_type",
-                    "cisco_ios"
-                ).strip()
-
-                if not device_type:
-                    device_type = "cisco_ios"
-
-                devices.append(
-                    {
-                        "ip": ip,
-                        "device_type": device_type
-                    }
-                )
-
-    except FileNotFoundError:
-        print(f"ERROR: File '{filename}' not found.")
-        return []
-
-    return devices
-
 def load_yaml_devices(filename):
-    """Load devices from site-based YAML inventory."""
+    """Load devices from YAML inventory."""
 
     devices = []
 
@@ -199,52 +177,44 @@ def load_yaml_devices(filename):
         with open(filename, mode="r") as file:
             data = yaml.safe_load(file)
 
-        if not data or "sites" not in data:
+        if not data or "devices" not in data:
             print(
-                "ERROR: YAML file must contain a top-level 'sites' section."
+                "ERROR: YAML file must contain a 'devices' section."
             )
             return []
 
-        for site_name, site_data in data["sites"].items():
+        for index, device in enumerate(
+            data["devices"],
+            start=1
+        ):
+            ip = str(
+                device.get("ip", "")
+            ).strip()
 
-            if not site_data:
+            hostname = str(
+                device.get("hostname", "Unknown")
+            ).strip()
+
+            try:
+                ipaddress.IPv4Address(ip)
+
+            except ipaddress.AddressValueError:
+                print(
+                    f"Skipping invalid IP '{ip}' "
+                    f"for device '{hostname}'."
+                )
                 continue
 
-            site_devices = site_data.get("devices", [])
+            device_type = device.get(
+                "device_type",
+                "cisco_ios"
+            )
 
-            for device in site_devices:
+            # Preserve all fields from YAML
+            device["ip"] = ip
+            device["device_type"] = device_type
 
-                ip = str(
-                    device.get("ip", "")
-                ).strip()
-
-                try:
-                    ipaddress.IPv4Address(ip)
-
-                except ipaddress.AddressValueError:
-                    print(
-                        f"Skipping invalid IP '{ip}' "
-                        f"at site '{site_name}'."
-                    )
-                    continue
-
-                # Default device type if omitted
-                device_type = device.get(
-                    "device_type",
-                    "cisco_ios"
-                )
-
-                # Preserve all YAML fields
-                device["ip"] = ip
-                device["device_type"] = device_type
-
-                # Automatically populate site
-                device.setdefault(
-                    "site",
-                    site_name
-                )
-
-                devices.append(device)
+            devices.append(device)
 
     except FileNotFoundError:
         print(
@@ -257,6 +227,11 @@ def load_yaml_devices(filename):
             f"ERROR parsing YAML file: {e}"
         )
         return []
+
+    print(
+        f"\nLoaded {len(devices)} device(s) "
+        f"from {filename}."
+    )
 
     return devices
 

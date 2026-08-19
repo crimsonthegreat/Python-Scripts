@@ -176,4 +176,12 @@ cython_debug/
 # specific files
 Python Crash Course/Chapter 10/*.txt
 
-inventory.yml
+*inventory*.csv
+*inventory*.yml
+*inventory*.yaml
+*acl_rules*.yml
+*acl_rules*.csv
+*acl_rules*.yaml
+*ip_helper*.yml
+*ip_helper*.csv
+*ip_helper*.yaml

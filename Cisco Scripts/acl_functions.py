@@ -338,6 +338,24 @@ def get_vty_acl_references(ssh, acl_name):
 
     return references
 
+def get_vty_lines(ssh):
+    """Return every configured VTY line or line range on the device."""
+
+    output = ssh.send_command(
+        "show running-config | section ^line vty"
+    )
+
+    vty_lines = []
+
+    for line in output.splitlines():
+
+        stripped = line.strip()
+
+        if stripped.startswith("line vty ") and stripped not in vty_lines:
+            vty_lines.append(stripped)
+
+    return vty_lines
+
 def remove_vty_acl_references(ssh, references):
     """Remove ACL access-class commands from VTY lines."""
 
@@ -355,6 +373,51 @@ def remove_vty_acl_references(ssh, references):
         outputs.append(output)
 
     return outputs
+
+def restore_vty_acl_references(ssh, references):
+    """Restore the exact VTY access-class statements captured earlier."""
+
+    outputs = []
+
+    for reference in references:
+
+        command_set = [
+            reference["line"],
+            reference["command"]
+        ]
+
+        outputs.append(ssh.send_config_set(command_set))
+
+    return outputs
+
+def apply_acl_to_all_vty_lines(ssh, acl_name, vty_lines, direction="in"):
+    """Apply an ACL access-class to every discovered VTY line range."""
+
+    if direction not in ("in", "out"):
+        raise ValueError("VTY access-class direction must be 'in' or 'out'.")
+
+    outputs = []
+
+    for line in vty_lines:
+
+        command_set = [
+            line,
+            f"access-class {acl_name} {direction}"
+        ]
+
+        outputs.append(ssh.send_config_set(command_set))
+
+    return outputs
+
+def remove_acl(ssh, acl_name, acl_type):
+    """Remove an entire named or numbered ACL using named ACL syntax."""
+
+    if acl_type not in ("standard", "extended"):
+        raise ValueError("ACL type must be standard or extended.")
+
+    return ssh.send_config_set([
+        f"no ip access-list {acl_type} {acl_name}"
+    ])
 
 def add_vty_acl_references(ssh, acl_name):
     """Remove ACL access-class commands from VTY lines."""
