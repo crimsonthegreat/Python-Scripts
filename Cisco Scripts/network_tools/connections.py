@@ -44,3 +44,12 @@ def save_config(ssh):
     """Function to save the configuration"""
 
     return ssh.save_config()
+
+def get_hostname(ssh):
+    """Return hostname from the device prompt."""
+
+    return (
+        ssh.find_prompt()
+        .strip()
+        .rstrip("#>")
+    )

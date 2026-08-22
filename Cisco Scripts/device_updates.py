@@ -1,249 +1,238 @@
-import netmiko
-import getpass
-import subprocess
-from netmiko.scp_functions import progress_bar
+#!/usr/bin/env python3
+
 import time
+from pathlib import Path
 
-def connect_info():
-    # Get input from user on connection parameters
-    ip = input("Please Enter IP Address: ")
-    username = input("Enter Username: ")
-    password = getpass.getpass("Enter Password: ")
+import netmiko
+import network_tools
 
-    cisco = {
-            'device_type': 'cisco_ios',
-            'host': ip,
-            'username': username,
-            'password': password
-        }
-    
-    return cisco
 
 def get_file_system():
-    # Get the file_system to check for device
-    file_system = [
-        "bootflash", 
+    """Prompt user for target device filesystem."""
+
+    file_systems = [
+        "bootflash",
         "flash",
         "usbflash0",
-        "usbflash1"
-        ]
-    
-    number = 1
-    for system in file_system:
-        print(f"\n{number}) {system}:")
-        number += 1
-
-    while True:
-        while True:
-            select_system = input("\nPlease enter the number for the file system [1-4]: ")
-            try:
-                select_system = int(select_system)
-                break
-            except ValueError:
-                print("Please enter a number between 1 and 4!")
-        
-        if select_system == 1:
-            print("\nYou have selcted bootflash")
-            flash_system = file_system[0]
-            break
-        elif select_system == 2:
-            print("\nYou have selcted flash")
-            flash_system = file_system[1]
-            break
-        elif select_system == 3:
-            print("\nYou have selcted usbflash0")
-            flash_system = file_system[2]
-            break
-        elif select_system == 4:
-            print("\nYou have selcted usbflash1")
-            flash_system = file_system[3]
-            break
-        else:
-            print("Please enter a number between 1 and 4!")
-
-    return flash_system
-
-def device_file_name():
-    # Prompt user for the name of the file in the file system
-    device_file = input("\nPlease enter the name of the file on the switch (match the Cisco Image name): ")
-    return device_file
-        
-def copy_file(cisco, device_file, file_system):
-    print("Please enter the name of the file you would like to upload to the device")
-    local_file = input("(include the full path to the file excluding the filename): ")
-    local_file = rf"{local_file}{device_file}"
-
-    try:
-        with netmiko.ConnectHandler(**cisco) as ssh:
-            transfer_results = netmiko.file_transfer(
-                ssh,
-                source_file=local_file,
-                dest_file=device_file,
-                direction="put",
-                overwrite_file=True,
-                progress4=progress_bar,
-            )
-        
-        if transfer_results.get("file_verified"):
-            print(f"Success! File transferred to {file_system}.")
-        else:
-            print("Transfer finished, but failed to verify.")
-        return device_file
-    
-    except Exception as e:
-        print(f"An Error occurred: {e}")
-
-def show_version_ios_xe(cisco):
-    # Show version on current device
-
-    try:
-        with netmiko.ConnectHandler(**cisco) as ssh:
-            version = ssh.send_command("show version | inc Cisco IOS XE Software, Version")
-            print(f"{version}\n")
-
-    except Exception as e:
-        print(f"An Error occurred: {e}")
-
-def check_file_system(cisco, device_file, file_system):
-    # Check the file system files
-
-    try:
-        with netmiko.ConnectHandler(**cisco) as ssh:
-            ssh.send_command('terminal length 0')
-            output = ssh.send_command(f'dir {file_system}:{device_file}')
-            print(f"{output}\n")
-
-    except Exception as e:
-        print(f"An Error occurred: {e}")
-
-def update_device(cisco, file_system, device_file):
-    # Send the update commands to the device
-
-    try:
-        with netmiko.ConnectHandler(**cisco) as ssh:
-            print("Exceuting save and upgrade")
-            ssh.send_command("wr")
-
-            print("Executing update...")
-            print("The device will reboot after execution")
-            output = ssh.send_command(f"install add file {file_system}:{device_file} activate commit prompt-level none",
-                                      expect_string='#')
-            print("Commands sent successfully. Device is rebooting.")
-            print(output)
-
-    except Exception as e:
-        print(f"An Error occurred: {e}")
-
-def ping_device(ip, count=1, timeout=2):
-    cmd = [
-        "ping",
-        "-c", str(count),
-        "-W", str(timeout),
-        ip
+        "usbflash1",
     ]
 
+    for number, file_system in enumerate(file_systems, start=1):
+        print(f"{number}) {file_system}")
+
+    while True:
+        try:
+            selection = int(
+                input(
+                    "\nPlease select the file system [1-4]: "
+                )
+            )
+
+            if 1 <= selection <= len(file_systems):
+                return file_systems[selection - 1]
+
+        except ValueError:
+            pass
+
+        print("Please enter a number between 1 and 4.")
+
+
+def get_image_file():
+    """Get local IOS-XE image and device filename."""
+
+    local_file = Path(
+        input(
+            "\nEnter the full path to the IOS-XE image: "
+        ).strip()
+    )
+
+    return local_file, local_file.name
+
+
+def wait_for_device(ip):
+    """Wait for device to return after upgrade."""
+
+    print("\nWaiting 600 seconds for initial ping test...")
+    time.sleep(600)
+
+    if network_tools.ping_device(ip):
+        print(f"{ip} is back online.")
+        return True
+
+    print(
+        f"{ip} is still unreachable. "
+        "Waiting another 300 seconds..."
+    )
+
+    time.sleep(300)
+
+    if network_tools.ping_device(ip):
+        print(f"{ip} is back online.")
+        return True
+
+    print(
+        f"{ip} is still unreachable. "
+        "Please begin manual checks."
+    )
+
+    return False
+
+
+def process_device(device, username, password):
+
+    ip = device["ip"]
+
+    if not network_tools.ping_device(ip):
+        print(f"{ip} is not reachable.")
+        return
+
+    connection_params = network_tools.build_connection(
+        device,
+        username,
+        password,
+    )
+
+    file_system = get_file_system()
+    local_file, device_file = get_image_file()
+
     try:
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=(count * timeout) + 2
+        with netmiko.ConnectHandler(**connection_params) as ssh:
+
+            hostname = (
+                ssh.find_prompt()
+                .strip()
+                .rstrip("#>")
+            )
+
+            print(f"\nConnected to {hostname} ({ip})")
+
+            # Current version
+            print("\nCurrent Version:")
+
+            print(
+                network_tools.get_ios_xe_version(ssh)
+            )
+
+            # Check image
+            print(
+                f"\nChecking {file_system} "
+                f"for {device_file}..."
+            )
+
+            file_output = network_tools.check_file_system(
+                ssh,
+                device_file,
+                file_system,
+            )
+
+            print(file_output)
+
+            file_exists = input(
+                "\nIs the expected image already present? [y/n]: "
+            ).lower().strip()
+
+            if file_exists in ("n", "no"):
+
+                copy_image = input(
+                    "Copy image to device? [y/n]: "
+                ).lower().strip()
+
+                if copy_image not in ("y", "yes"):
+                    return
+
+                print("\nCopying image...")
+
+                transfer_result = network_tools.copy_file(
+                    ssh,
+                    str(local_file),
+                    device_file,
+                    file_system,
+                )
+
+                if not transfer_result.get("file_verified"):
+                    print("ERROR: File failed verification.")
+                    return
+
+                print("Image successfully transferred and verified.")
+
+            # Confirmation
+            proceed = input(
+                "\nProceed with IOS-XE upgrade? [y/n]: "
+            ).lower().strip()
+
+            if proceed not in ("y", "yes"):
+                return
+
+            print("\nStarting IOS-XE installation...")
+
+            output = network_tools.install_ios_xe(
+                ssh,
+                file_system,
+                device_file,
+            )
+
+            print(output)
+
+    except netmiko.NetmikoAuthenticationException:
+        print(f"Authentication failed for {ip}.")
+        return
+
+    except netmiko.NetmikoTimeoutException:
+        # A timeout/disconnect can be expected during reboot.
+        print(
+            f"Connection to {ip} closed/timed out "
+            "during the upgrade."
         )
 
-        return result.returncode == 0
+    except Exception as error:
+        print(f"Upgrade error on {ip}: {error}")
+        return
 
-    except subprocess.TimeoutExpired:
-        return False
+    # Device should now be rebooting
+    if not wait_for_device(ip):
+        return
 
-    except Exception as e:
-        print(f"Ping failed: {e}")
-        return False
+    # Reconnect after reboot
+    try:
+        with netmiko.ConnectHandler(**connection_params) as ssh:
+
+            print("\nUpdated Version:")
+
+            print(
+                network_tools.get_ios_xe_version(ssh)
+            )
+
+    except Exception as error:
+        print(
+            f"Device responded to ping but SSH "
+            f"reconnection failed: {error}"
+        )
+
 
 def main():
+
+    username, password = network_tools.get_credentials()
+
     while True:
-        cisco = connect_info()
-        ip = cisco['host']
-        
-        file_system = get_file_system()
-        device_file = device_file_name()
-        
-        print(f"\nChecking reachability for {ip}\n")
-        if ping_device(ip, count=1, timeout=2):
-            print(f"!!!!!\n{ip} is reachable\n\n")
-        else:
-            print(f".....\n {ip} is not reachable\n\n")
-            quit()
-        
-        print("Current Version:")
-        show_version_ios_xe(cisco)
 
-        while True:
-            print(f"Please verify the file is in the {file_system}:\n")
-            check_file_system(cisco=cisco, device_file=device_file, file_system=file_system)
+        devices = network_tools.get_devices()
 
-            print("[Enter q at any prompt to exit]")
-            file_check = input(f"Is the file you expected in the {file_system}? [y/n]: ")
-            file_check = file_check.lower()
+        if not devices:
+            return
 
-            if file_check == 'n':
-                while True:
-                    scp_file = input("Would you like to copy the file to the device? [y/n]: ")
-                    scp_file = scp_file.lower()
+        process_device(
+            devices[0],
+            username,
+            password,
+        )
 
-                    if scp_file == 'n' or scp_file == 'q':
-                        quit()
-                    elif scp_file =='y':
-                        print("You will be asked to enter details about the file:\n")
-                        copy_file(cisco=cisco, device_file=device_file, file_system=file_system)
-                        break
-                    else:
-                        print("Please enter y or n")
+        again = input(
+            "\nUpgrade another device? [y/n]: "
+        ).lower().strip()
 
-            elif file_check == 'y':
-                update = input("Would you like to proceed with the update? [y/n]: ")
-                update = update.lower()
+        if again not in ("y", "yes"):
+            break
 
-                if update == 'n' or update == 'q':
-                    quit()
-                elif update == 'y':
-                    update_device(cisco=cisco, device_file=device_file, file_system=file_system)
-                    print("Waiting 600 seconds for initial ping test\n")
-                    time.sleep(600)
-
-                    if ping_device(ip, count=1,timeout=2):
-                        print(f"!!!!!\n {ip} is back online")
-                    else:
-                        print(f".....\n {ip} is still unreachable. Waiting 300 seconds for second ping test")
-                        time.sleep(300)
-
-                        if ping_device(ip, count=1,timeout=2):
-                            print(f"!!!!!\n {ip} is back online")
-                        else:
-                            print(f".....\n {ip} is still unreachable. Please begin manual checks!")
-                    
-                    print("Updated Version:")
-                    show_version_ios_xe(cisco)
-
-                    break
-                else:
-                    print("Please enter y or n to continue...")
-
-            elif file_check == 'q':
-                quit()
-
-            else:
-                print("Please enter y or n to continue...")
-        
-        again = input("Would you like to connect to another device? [y/n]: ")
-        again = again.lower()
-
-        if again == 'n' or again == 'q':
-            quit()
-        elif again == 'y':
-            print("Script will run again!")
-            continue
-        else:
-            print("Please enter y or n to continue...")
 
 if __name__ == "__main__":
     main()

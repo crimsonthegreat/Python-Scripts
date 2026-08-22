@@ -22,6 +22,7 @@ from .connections import (
     build_connection,
     ping_device,
     save_config,
+    get_hostname,
 )
 
 # Prompts
@@ -68,6 +69,14 @@ from .ip_helpers import (
     apply_helper_commands,
 )
 
+# IOS Upgrade
+from .ios_upgrade import (
+    get_ios_xe_version,
+    check_file_system,
+    copy_file,
+    install_ios_xe,
+)
+
 
 __all__ = [
     # Credentials
@@ -82,6 +91,7 @@ __all__ = [
     "build_connection",
     "ping_device",
     "save_config",
+    "get_hostname",
 
     # Prompts
     "user_input",
@@ -118,6 +128,12 @@ __all__ = [
     "get_svi_helpers",
     "build_helper_commands",
     "apply_helper_commands",
+
+    # IOS-XE upgrades
+    "get_ios_xe_version",
+    "check_file_system",
+    "copy_file",
+    "install_ios_xe",
 ]
 
 __version__ = "0.1.0"

@@ -1,9 +1,6 @@
 import argparse
-
 import netmiko
-
-import base_functions as bf
-import ip_helper_functions as helper
+import network_tools
 
 
 def get_arguments():
@@ -97,15 +94,15 @@ def process_device(device, username, password, desired_helpers, mode,
     print(f"Processing Device: {ip}")
     print("=" * 60)
 
-    if not bf.ping_device(ip):
+    if not network_tools.ping_device(ip):
         return {"ip": ip, "status": "failed", "reason": "Ping failed"}
 
-    connection = bf.build_connection(device, username, password)
+    connection = network_tools.build_connection(device, username, password)
 
     try:
         with netmiko.ConnectHandler(**connection) as ssh:
             hostname = ssh.find_prompt().strip("#>")
-            svis = helper.get_svi_helpers(ssh)
+            svis = network_tools.get_svi_helpers(ssh)
 
             if not svis:
                 return {
@@ -115,7 +112,7 @@ def process_device(device, username, password, desired_helpers, mode,
                     "reason": "No configured SVIs found"
                 }
 
-            command_sets = helper.build_helper_commands(
+            command_sets = network_tools.build_helper_commands(
                 svis=svis,
                 desired_helpers=desired_helpers,
                 mode=mode,
@@ -137,7 +134,7 @@ def process_device(device, username, password, desired_helpers, mode,
                 for command in commands:
                     print(f"  {command}")
 
-            helper.apply_helper_commands(
+            network_tools.apply_helper_commands(
                 ssh=ssh,
                 command_sets=command_sets,
                 dry_run=dry_run
@@ -145,7 +142,7 @@ def process_device(device, username, password, desired_helpers, mode,
 
             if not dry_run:
                 print("\nSaving configuration...")
-                print(bf.save_config(ssh=ssh))
+                print(network_tools.save_config(ssh=ssh))
 
             return {
                 "ip": ip,
@@ -166,19 +163,19 @@ def main():
     args = get_arguments()
 
     try:
-        desired_helpers = helper.load_helper_addresses(args.helper_file)
+        desired_helpers = network_tools.load_helper_addresses(args.helper_file)
     except (FileNotFoundError, OSError, ValueError) as error:
         print(f"ERROR loading IP helpers: {error}")
         return
 
-    devices = bf.get_devices(args.inventory_file)
+    devices = network_tools.get_devices(args.inventory_file)
 
     if not devices:
         print("No valid devices to process.")
         return
 
     mode = "replace" if args.replace else "remove" if args.remove else "ensure"
-    username, password = bf.get_credentials()
+    username, password = network_tools.get_credentials()
     results = []
 
     for device in devices:

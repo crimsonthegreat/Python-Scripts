@@ -1,6 +1,5 @@
 import netmiko
-import base_functions as bf
-import acl_functions as acl
+import network_tools
 
 print("\n" + "=" * 60)
 print("Update ACL on VTY Lines" + "\n" + "=" * 60)
@@ -17,7 +16,7 @@ def process_device(device, username, password, acl_name):
 
     print(f"\nChecking reachability for {ip}...")
 
-    if not bf.ping_device(ip):
+    if not network_tools.ping_device(ip):
 
         print(f"{ip} is not reachable.")
 
@@ -29,7 +28,7 @@ def process_device(device, username, password, acl_name):
 
     print(f"{ip} is reachable.")
 
-    cisco = bf.build_connection(
+    cisco = network_tools.build_connection(
         device=device,
         username=username,
         password=password
@@ -52,7 +51,7 @@ def process_device(device, username, password, acl_name):
 
             print("\nShowing existing VTY line configuration\n")
 
-            acl_references = acl.get_vty_acl_references(ssh=ssh, acl_name=acl_name)
+            acl_references = network_tools.get_vty_acl_references(ssh=ssh, acl_name=acl_name)
 
             if not acl_references:
 
@@ -72,7 +71,7 @@ def process_device(device, username, password, acl_name):
                         }
                     
                     elif user_input in ("y","yes"):
-                        acl.add_vty_acl_references(ssh=ssh, acl_name=acl_name)
+                        network_tools.add_vty_acl_references(ssh=ssh, acl_name=acl_name)
                         break
 
                     elif user_input == "q":
@@ -102,7 +101,7 @@ def process_device(device, username, password, acl_name):
                             "reason": "ACL not applied to VTY lines"
                         }
                     elif user_input in ("y","yes"):
-                        acl.remove_vty_acl_references(ssh=ssh, references=acl_references)
+                        network_tools.remove_vty_acl_references(ssh=ssh, references=acl_references)
                         break
 
                     elif user_input == "q":
@@ -114,7 +113,7 @@ def process_device(device, username, password, acl_name):
             # Save
             print("\nSaving configuration...\n")
 
-            save_output = bf.save_config(ssh=ssh)
+            save_output = network_tools.save_config(ssh=ssh)
 
             print(save_output)
 
@@ -163,15 +162,15 @@ def process_device(device, username, password, acl_name):
     
 def main():
 
-    args = bf.get_arguments()
+    args = network_tools.get_arguments()
 
-    username,password = bf.get_credentials()
+    username,password = network_tools.get_credentials()
 
-    devices = bf.get_devices(inventory_file=args.inventory_file)
+    devices = network_tools.get_devices(inventory_file=args.inventory_file)
 
-    selected_acl_type = acl.get_acl_type()
+    selected_acl_type = network_tools.get_acl_type()
 
-    acl_name = acl.get_acl_name(selected_acl_type=selected_acl_type)
+    acl_name = network_tools.get_acl_name(selected_acl_type=selected_acl_type)
 
     if not devices:
         print("No valid devices to process.")

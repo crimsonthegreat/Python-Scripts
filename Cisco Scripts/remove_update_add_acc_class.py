@@ -1,7 +1,5 @@
 import netmiko
-import base_functions as bf
-import acl_functions as acl
-from acl_importer import build_acl_command_sets, load_acl_rules
+import network_tools
 
 print("\n" + "=" * 60)
 print("Update ACL on VTY Lines" + "\n" + "=" * 60)
@@ -17,7 +15,7 @@ def process_device(device, username, password, acl_name, acl_type, acl_commands,
 
     print(f"\nChecking reachability for {ip}...")
 
-    if not bf.ping_device(ip):
+    if not network_tools.ping_device(ip):
 
         print(f"{ip} is not reachable.")
 
@@ -29,7 +27,7 @@ def process_device(device, username, password, acl_name, acl_type, acl_commands,
 
     print(f"{ip} is reachable.")
 
-    cisco = bf.build_connection(
+    cisco = network_tools.build_connection(
         device=device,
         username=username,
         password=password
@@ -52,12 +50,12 @@ def process_device(device, username, password, acl_name, acl_type, acl_commands,
 
             print("\nShowing existing VTY line configuration\n")
 
-            vty_lines = acl.get_vty_lines(ssh=ssh)
+            vty_lines = network_tools.get_vty_lines(ssh=ssh)
 
             if not vty_lines:
                 raise ValueError("No VTY line configuration was found on the device.")
 
-            acl_references = acl.get_vty_acl_references(ssh=ssh, acl_name=acl_name)
+            acl_references = network_tools.get_vty_acl_references(ssh=ssh, acl_name=acl_name)
 
             if not acl_references:
                 print(f"\nACL '{acl_name}' is not applied to any VTY lines.")
@@ -94,13 +92,13 @@ def process_device(device, username, password, acl_name, acl_type, acl_commands,
 
             if acl_references:
                 print("\nRemoving existing VTY access-class references...")
-                acl.remove_vty_acl_references(
+                network_tools.remove_vty_acl_references(
                     ssh=ssh,
                     references=acl_references
                 )
 
             print(f"\nRemoving existing ACL '{acl_name}'...")
-            acl.remove_acl(
+            network_tools.remove_acl(
                 ssh=ssh,
                 acl_name=acl_name,
                 acl_type=acl_type
@@ -110,7 +108,7 @@ def process_device(device, username, password, acl_name, acl_type, acl_commands,
             ssh.send_config_set(acl_commands)
 
             print("\nApplying the ACL to all VTY lines...")
-            acl.apply_acl_to_all_vty_lines(
+            network_tools.apply_acl_to_all_vty_lines(
                     ssh=ssh,
                     acl_name=acl_name,
                     vty_lines=vty_lines,
@@ -120,7 +118,7 @@ def process_device(device, username, password, acl_name, acl_type, acl_commands,
             # Save
             print("\nSaving configuration...\n")
 
-            save_output = bf.save_config(ssh=ssh)
+            save_output = network_tools.save_config(ssh=ssh)
 
             print(save_output)
 
@@ -169,7 +167,7 @@ def process_device(device, username, password, acl_name, acl_type, acl_commands,
     
 def main():
 
-    args = bf.get_arguments()
+    args = network_tools.get_arguments()
 
     if not args.acl_rules_file:
         print(
@@ -180,8 +178,8 @@ def main():
         return
 
     try:
-        imported_rules = load_acl_rules(args.acl_rules_file)
-        command_sets = build_acl_command_sets(imported_rules)
+        imported_rules = network_tools.load_acl_rules(args.acl_rules_file)
+        command_sets = network_tools.build_acl_command_sets(imported_rules)
     except (FileNotFoundError, OSError, ValueError) as error:
         print(f"ERROR loading ACL rules: {error}")
         return
@@ -195,9 +193,9 @@ def main():
 
     (acl_type, acl_name), acl_commands = next(iter(command_sets.items()))
 
-    username,password = bf.get_credentials()
+    username,password = network_tools.get_credentials()
 
-    devices = bf.get_devices(inventory_file=args.inventory_file)
+    devices = network_tools.get_devices(inventory_file=args.inventory_file)
 
     if not devices:
         print("No valid devices to process.")
