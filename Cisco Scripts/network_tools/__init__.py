@@ -15,12 +15,12 @@ from .inventory import (
     get_devices,
     load_csv_devices,
     load_yaml_devices,
-    filter_devices_by_site,
+    filter_devices,
 )
 
 # Connections
 from .connections import (
-    build_connection,
+    build_connection_param,
     ping_device,
     save_config,
     get_hostname,
@@ -87,10 +87,10 @@ __all__ = [
     "get_devices",
     "load_csv_devices",
     "load_yaml_devices",
-    "filter_devices_by_site",
-    
+    "filter_devices",
+
     # Connections
-    "build_connection",
+    "build_connection_param",
     "ping_device",
     "save_config",
     "get_hostname",

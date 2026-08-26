@@ -17,11 +17,24 @@ def get_arguments():
     )
 
     parser.add_argument(
+        "acl_rules_file",
+        nargs="?",
+        help="CSV or YAML file containing ACL rules"
+    )
+
+    parser.add_argument(
         "-i",
         "--inventory",
-        dest="inventory_option",
+        dest="inventory_file_explicit",
         help="CSV or YAML inventory file",
     )
+
+    parser.add_argument(
+            "-a",
+            "--acl-rules",
+            dest="acl_rules_file_explicit",
+            help="CSV or YAML file containing ACL rules"
+        )
 
     parser.add_argument(
         "-s",
@@ -37,21 +50,30 @@ def get_arguments():
 
     args = parser.parse_args()
 
-    if args.inventory_file and args.inventory_option:
+    # Prevent duplicate inventory arguments
+    if args.inventory_file and args.inventory_file_explicit:
         parser.error(
-            "Specify the inventory either positionally or with "
-            "-i/--inventory, not both."
+            "Specify the inventory file either positionally "
+            "or with --inventory, not both."
         )
 
+    # Prevent duplicate ACL rules arguments
+    if args.acl_rules_file and args.acl_rules_file_explicit:
+        parser.error(
+            "Specify the ACL rules file either positionally "
+            "or with --acl-rules, not both."
+        )
+
+    # Normalize arguments
     args.inventory_file = (
-        args.inventory_option or args.inventory_file
+        args.inventory_file_explicit
+        or args.inventory_file
     )
 
-    if not args.inventory_file:
-        parser.error(
-            "An inventory file is required, either positionally "
-            "or with -i/--inventory."
-        )
+    args.acl_rules_file = (
+        args.acl_rules_file_explicit
+        or args.acl_rules_file
+    )
 
     return args
 
@@ -78,7 +100,7 @@ def process_device(device, username, password, acl_name, acl_type, acl_commands,
 
     print(f"{ip} is reachable.")
 
-    cisco = network_tools.build_connection(
+    cisco = network_tools.build_connection_param(
         device=device,
         username=username,
         password=password
@@ -248,8 +270,17 @@ def main():
 
     devices = network_tools.get_devices(inventory_file=args.inventory_file)
 
+    devices = network_tools.filter_devices(devices, site=args.site)
+
     if not devices:
-        print("No valid devices to process.")
+        if args.site:
+            print(
+                f"No devices found matching site "
+                f"'{args.site}'."
+            )
+        else:
+            print("No valid devices to process.")
+
         return
 
     print(f"\n{len(devices)} device(s) selected:")
