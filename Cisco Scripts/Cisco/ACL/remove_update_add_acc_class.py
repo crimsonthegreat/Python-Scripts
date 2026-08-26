@@ -77,13 +77,13 @@ def get_arguments():
 
     return args
 
-def process_device(device, username, password, acl_name, acl_type, acl_commands, dry_run=False):
+def process_device(dev_num,num_of_devices,device, username, password, acl_name, acl_type, acl_commands, dry_run=False):
     """Process one device using one SSH connection."""
 
     ip = device["ip"]
 
     print("\n" + "=" * 60)
-    print(f"Processing Device: {ip}")
+    print(f"Processing Device {dev_num} of {num_of_devices}: {ip}")
     print("=" * 60)
 
     print(f"\nChecking reachability for {ip}...")
@@ -199,7 +199,8 @@ def process_device(device, username, password, acl_name, acl_type, acl_commands,
                 "ip": ip,
                 "hostname": hostname,
                 "status": "success",
-                "reason": ""
+                "reason": "",
+                "acl_name": acl_name
             }
 
     except netmiko.NetmikoAuthenticationException:
@@ -211,7 +212,8 @@ def process_device(device, username, password, acl_name, acl_type, acl_commands,
         return {
             "ip": ip,
             "status": "failed",
-            "reason": "Authentication failure"
+            "reason": "Authentication failure",
+            "acl_name": acl_name
         }
 
     except netmiko.NetmikoTimeoutException:
@@ -223,7 +225,8 @@ def process_device(device, username, password, acl_name, acl_type, acl_commands,
         return {
             "ip": ip,
             "status": "failed",
-            "reason": "Connection timeout"
+            "reason": "Connection timeout",
+            "acl_name": acl_name
         }
 
     except Exception as e:
@@ -289,11 +292,15 @@ def main():
         print(f"  {device['ip']}")
 
     results = []
-    
+
+    dev_num = 1
+
     # Process every device
     for device in devices:
 
         result = process_device(
+            dev_num=dev_num,
+            num_of_devices=len(devices),
             device=device,
             username=username,
             password=password,
@@ -302,6 +309,8 @@ def main():
             acl_commands=acl_commands,
             dry_run=args.dry_run,
         )
+
+        dev_num += 1
 
         results.append(result)
 
@@ -372,6 +381,20 @@ def main():
             f"{result['ip']} - "
             f"{result['reason']}"
         )
+
+    log_file = network_tools.write_results_log(
+        results=results,
+        script_name="remove_update_add_acc_class",
+        site=args.site
+    )
+
+    log_file = network_tools.write_results_csv(
+    results=results,
+    script_name="remove_update_add_acc_class",
+    site=args.site,
+    )
+
+    print(f"\nResults written to: {log_file}")
 
 if __name__ == "__main__":
     main()

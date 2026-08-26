@@ -187,3 +187,5 @@ Python Crash Course/Chapter 10/*.txt
 *ip_helper*.yaml
 
 .DS_Store
+
+*.csv

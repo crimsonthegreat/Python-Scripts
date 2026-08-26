@@ -78,6 +78,11 @@ from .ios_upgrade import (
     install_ios_xe,
 )
 
+# Logging
+from .logging_tools import (
+    write_results_log,
+    write_results_csv,
+)
 
 __all__ = [
     # Credentials
@@ -136,6 +141,10 @@ __all__ = [
     "check_file_system",
     "copy_file",
     "install_ios_xe",
+
+    # Logging
+    "write_results_log",
+    "write_results_csv",
 ]
 
 __version__ = "0.1.0"
