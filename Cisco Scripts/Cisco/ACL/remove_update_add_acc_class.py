@@ -1,8 +1,59 @@
 import netmiko
+import argparse
 import network_tools
 
 print("\n" + "=" * 60)
 print("Update ACL on VTY Lines" + "\n" + "=" * 60)
+
+def get_arguments():
+    parser = argparse.ArgumentParser(
+        description="Update ACLs on Cisco devices."
+    )
+
+    parser.add_argument(
+        "inventory_file",
+        nargs="?",
+        help="CSV or YAML inventory file",
+    )
+
+    parser.add_argument(
+        "-i",
+        "--inventory",
+        dest="inventory_option",
+        help="CSV or YAML inventory file",
+    )
+
+    parser.add_argument(
+        "-s",
+        "--site",
+        help="Limit execution to devices assigned to this site",
+    )
+
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show planned changes without configuring devices",
+    )
+
+    args = parser.parse_args()
+
+    if args.inventory_file and args.inventory_option:
+        parser.error(
+            "Specify the inventory either positionally or with "
+            "-i/--inventory, not both."
+        )
+
+    args.inventory_file = (
+        args.inventory_option or args.inventory_file
+    )
+
+    if not args.inventory_file:
+        parser.error(
+            "An inventory file is required, either positionally "
+            "or with -i/--inventory."
+        )
+
+    return args
 
 def process_device(device, username, password, acl_name, acl_type, acl_commands, dry_run=False):
     """Process one device using one SSH connection."""
@@ -167,7 +218,7 @@ def process_device(device, username, password, acl_name, acl_type, acl_commands,
     
 def main():
 
-    args = network_tools.get_arguments()
+    args = get_arguments()
 
     if not args.acl_rules_file:
         print(

@@ -156,3 +156,39 @@ def load_yaml_devices(filename):
     )
 
     return devices
+
+def filter_devices_by_site(devices, site=None):
+    """
+    Filter devices by their inventory 'site' value.
+
+    Matching is case-insensitive and ignores surrounding whitespace.
+    If site is None, all devices are returned.
+    """
+    if not site:
+        return devices
+
+    requested_site = site.strip().casefold()
+
+    filtered_devices = [
+        device
+        for device in devices
+        if str(device.get("site") or "").strip().casefold() == requested_site
+    ]
+
+    if not filtered_devices:
+        available_sites = sorted(
+            {
+                str(device.get("site")).strip()
+                for device in devices
+                if device.get("site")
+            },
+            key=str.casefold,
+        )
+
+        available_text = ", ".join(available_sites) or "None"
+        raise ValueError(
+            f"No devices found for site '{site}'. "
+            f"Available sites: {available_text}"
+        )
+
+    return filtered_devices

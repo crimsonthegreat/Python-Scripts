@@ -15,6 +15,7 @@ from .inventory import (
     get_devices,
     load_csv_devices,
     load_yaml_devices,
+    filter_devices_by_site,
 )
 
 # Connections
@@ -86,7 +87,8 @@ __all__ = [
     "get_devices",
     "load_csv_devices",
     "load_yaml_devices",
-
+    "filter_devices_by_site",
+    
     # Connections
     "build_connection",
     "ping_device",
