@@ -1,5 +1,8 @@
 from datetime import datetime
 from pathlib import Path
+from csv import DictWriter
+from datetime import datetime
+from pathlib import Path
 
 
 def write_results_log(
@@ -59,25 +62,16 @@ def write_results_log(
 
     return log_file
 
-from csv import DictWriter
-from datetime import datetime
-from pathlib import Path
-
-
-def write_results_csv(
-    results,
-    script_name,
-    site=None,
-):
+def write_results_csv(results, script_name):
     """Write script execution results to a timestamped CSV log."""
 
-    # network_tools/logging_tools.py -> project root
     project_root = Path(__file__).resolve().parent.parent
 
     log_dir = project_root / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
 
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    run_time = datetime.now()
+    timestamp = run_time.strftime("%Y-%m-%d_%H-%M-%S")
 
     log_file = log_dir / f"{script_name}_{timestamp}.csv"
 
@@ -92,7 +86,13 @@ def write_results_csv(
         "acl_name",
     ]
 
-    with open(log_file, "w", newline="", encoding="utf-8") as file:
+    with open(
+        log_file,
+        "w",
+        newline="",
+        encoding="utf-8"
+    ) as file:
+
         writer = DictWriter(
             file,
             fieldnames=fieldnames,
@@ -103,11 +103,11 @@ def write_results_csv(
 
         for result in results:
             row = {
-                "timestamp": datetime.now().strftime(
+                "timestamp": run_time.strftime(
                     "%Y-%m-%d %H:%M:%S"
                 ),
                 "script": script_name,
-                "site": site or "",
+                "site": result.get("site", ""),
                 "hostname": result.get("hostname", ""),
                 "ip": result.get("ip", ""),
                 "status": result.get("status", ""),

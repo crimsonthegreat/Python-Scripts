@@ -158,14 +158,22 @@ def load_yaml_devices(filename):
     return devices
 
 def filter_devices(devices, site=None):
-    """Filter device inventory by optional criteria."""
+    """Filter devices by one or more site codes."""
 
-    if site:
-        devices = [
-            device
-            for device in devices
-            if str(device.get("site", "")).lower()
-            == site.lower()
-        ]
+    if not site:
+        return devices
 
-    return devices
+    # Allow either a single site or a list of sites
+    if isinstance(site, str):
+        site = [site]
+
+    sites = {
+        value.strip().lower()
+        for value in site
+    }
+
+    return [
+        device
+        for device in devices
+        if str(device.get("site", "")).strip().lower() in sites
+    ]

@@ -39,6 +39,7 @@ def get_arguments():
     parser.add_argument(
         "-s",
         "--site",
+        nargs="+",
         help="Limit execution to devices assigned to this site",
     )
 
@@ -77,7 +78,16 @@ def get_arguments():
 
     return args
 
-def process_device(dev_num,num_of_devices,device, username, password, acl_name, acl_type, acl_commands, dry_run=False):
+def process_device(
+        site,
+        dev_num,
+        num_of_devices,
+        device, username, 
+        password, acl_name, 
+        acl_type, acl_commands, 
+        dry_run=False
+        ):
+    
     """Process one device using one SSH connection."""
 
     ip = device["ip"]
@@ -94,6 +104,7 @@ def process_device(dev_num,num_of_devices,device, username, password, acl_name, 
 
         return {
             "ip": ip,
+            "site": site,
             "status": "failed",
             "reason": "Ping failed"
         }
@@ -198,6 +209,7 @@ def process_device(dev_num,num_of_devices,device, username, password, acl_name, 
             return {
                 "ip": ip,
                 "hostname": hostname,
+                "site": site,
                 "status": "success",
                 "reason": "",
                 "acl_name": acl_name
@@ -211,6 +223,7 @@ def process_device(dev_num,num_of_devices,device, username, password, acl_name, 
 
         return {
             "ip": ip,
+            "site": site,
             "status": "failed",
             "reason": "Authentication failure",
             "acl_name": acl_name
@@ -224,6 +237,7 @@ def process_device(dev_num,num_of_devices,device, username, password, acl_name, 
 
         return {
             "ip": ip,
+            "site": site,
             "status": "failed",
             "reason": "Connection timeout",
             "acl_name": acl_name
@@ -237,6 +251,7 @@ def process_device(dev_num,num_of_devices,device, username, password, acl_name, 
 
         return {
             "ip": ip,
+            "site": site,
             "status": "failed",
             "reason": str(e)
         }
@@ -278,8 +293,8 @@ def main():
     if not devices:
         if args.site:
             print(
-                f"No devices found matching site "
-                f"'{args.site}'."
+                "No devices found matching site(s): "
+                + ", ".join(args.site)
             )
         else:
             print("No valid devices to process.")
@@ -299,6 +314,7 @@ def main():
     for device in devices:
 
         result = process_device(
+            site=device["site"],
             dev_num=dev_num,
             num_of_devices=len(devices),
             device=device,
@@ -384,15 +400,13 @@ def main():
 
     log_file = network_tools.write_results_log(
         results=results,
-        script_name="remove_update_add_acc_class",
-        site=args.site
+        script_name="remove_update_add_acc_class"
     )
 
     log_file = network_tools.write_results_csv(
     results=results,
     script_name="remove_update_add_acc_class",
-    site=args.site,
-    )
+)
 
     print(f"\nResults written to: {log_file}")
 
