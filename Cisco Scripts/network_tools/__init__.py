@@ -84,6 +84,14 @@ from .logging_tools import (
     write_results_csv,
 )
 
+# Passwords
+from .passwords import (
+    set_enable_secret,
+    set_user_secret,
+    set_device_passwords,
+    verify_password_configuration,
+)
+
 __all__ = [
     # Credentials
     "get_credentials",
@@ -145,6 +153,12 @@ __all__ = [
     # Logging
     "write_results_log",
     "write_results_csv",
+
+    # Passwords
+    "set_enable_secret",
+    "set_user_secret",
+    "set_device_passwords",
+    "verify_password_configuration",
 ]
 
 __version__ = "0.1.0"

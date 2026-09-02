@@ -32,7 +32,7 @@ def get_arguments():
     if args.inventory_file and args.inventory_file_explicit:
         parser.error(
             "Specify the inventory file either positionally "
-            "or with --file, not both."
+            "or with --inventory, not both."
         )
 
     # Normalize into one variable
