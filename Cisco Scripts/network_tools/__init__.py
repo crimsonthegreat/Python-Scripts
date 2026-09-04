@@ -86,6 +86,7 @@ from .logging_tools import (
 
 # Passwords
 from .passwords import (
+    load_new_credentials,
     set_enable_secret,
     set_user_secret,
     set_device_passwords,
@@ -155,6 +156,7 @@ __all__ = [
     "write_results_csv",
 
     # Passwords
+    "load_new_credentials",
     "set_enable_secret",
     "set_user_secret",
     "set_device_passwords",

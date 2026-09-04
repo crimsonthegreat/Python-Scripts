@@ -1,3 +1,6 @@
+import os
+from dotenv import load_dotenv
+
 def set_enable_secret(ssh, new_secret):
     """Configure the enable secret using scrypt."""
 
@@ -52,36 +55,65 @@ def set_device_passwords(
 
     return ssh.send_config_set(commands)
 
+def load_new_credentials(env_file):
+    """Load new device credentials from a .env file."""
+
+    if not os.path.isfile(env_file):
+        raise FileNotFoundError(
+            f"Environment file not found: {env_file}"
+        )
+
+    load_dotenv(
+        dotenv_path=env_file,
+        override=True,
+    )
+
+    username = os.getenv("NEW_DEVICE_USERNAME")
+    user_secret = os.getenv("NEW_DEVICE_PASSWORD")
+    enable_secret = os.getenv("NEW_ENABLE_PASSWORD")
+
+    return {
+        "username": username,
+        "user_secret": user_secret,
+        "enable_secret": enable_secret,
+    }
+
+
 def verify_password_configuration(
     ssh,
     username=None,
     verify_enable=False,
 ):
     """
-    Verify local-user and enable-secret configuration.
+    Verify that configured credentials meet requirements.
 
-    User requirements:
-      - privilege 15
-      - Type 9 secret
+    Local user:
+        - privilege 15
+        - Type 9 (scrypt) secret
 
-    Enable requirements:
-      - Type 9 secret
+    Enable:
+        - Type 9 (scrypt) secret
     """
 
     results = {
         "valid": True,
         "user_valid": None,
+        "user_privilege_15": None,
+        "user_scrypt": None,
         "enable_valid": None,
+        "enable_scrypt": None,
     }
 
     if username:
         user_output = ssh.send_command(
-            f"show running-config | include ^username {username} "
+            f"show running-config | include ^username {username}"
         )
 
         privilege_ok = "privilege 15" in user_output
         scrypt_ok = "secret 9" in user_output
 
+        results["user_privilege_15"] = privilege_ok
+        results["user_scrypt"] = scrypt_ok
         results["user_valid"] = (
             privilege_ok and scrypt_ok
         )
@@ -94,9 +126,10 @@ def verify_password_configuration(
             "show running-config | include ^enable secret"
         )
 
-        results["enable_valid"] = (
-            "secret 9" in enable_output
-        )
+        scrypt_ok = "secret 9" in enable_output
+
+        results["enable_scrypt"] = scrypt_ok
+        results["enable_valid"] = scrypt_ok
 
         if not results["enable_valid"]:
             results["valid"] = False

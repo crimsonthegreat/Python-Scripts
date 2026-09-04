@@ -1,6 +1,5 @@
 import argparse
 import getpass
-
 import netmiko
 import network_tools
 
@@ -61,6 +60,11 @@ def get_arguments():
         help="Show target devices without making changes",
     )
 
+    parser.add_argument(
+    "--env",
+    metavar="FILE",
+    help="Load the new username, user secret and enable secret from a .env file"),
+
     args = parser.parse_args()
 
     if args.inventory_file and args.inventory_file_explicit:
@@ -79,9 +83,10 @@ def get_arguments():
             "Specify --enable, --user, or both."
         )
 
-    if args.user and not args.username:
+    if args.user and not args.username and not args.env:
         parser.error(
-            "--username is required when using --user."
+            "--username is required when using --user "
+            "unless --env is specified."
         )
 
     return args
@@ -131,17 +136,25 @@ def process_device(
         # ONE SSH CONNECTION FOR THE ENTIRE DEVICE
         with netmiko.ConnectHandler(**cisco) as ssh:
 
-            hostname = ssh.find_prompt().replace(
-                "#",
-                ""
-            ).replace(
-                ">",
-                ""
-            )
+            hostname = ssh.find_prompt().replace("#","").replace(">","")
 
-            print(
-                f"Connected to {hostname} ({ip})"
-            )
+            print(f"Connected to {hostname} ({ip})")
+
+            if dry_run:
+                print(
+                    f"DRY RUN: No changes made to "
+                    f"{hostname} ({ip})."
+                )
+
+                return {
+                    "ip": ip,
+                    "hostname": hostname,
+                    "site": device.get("site", ""),
+                    "status": "skipped",
+                    "reason": "Dry run - no changes made",
+                }
+
+            print(f"\nUpdating credentials on {hostname}...")
 
             network_tools.set_device_passwords(
                 ssh=ssh,
@@ -150,11 +163,64 @@ def process_device(
                 user_secret=user_secret,
             )
 
+            print("Verifying password configuration...")
+
+            verification = (
+                network_tools.verify_password_configuration(
+                    ssh=ssh,
+                    username=local_username,
+                    verify_enable=(
+                        enable_secret is not None
+                    ),
+                )
+            )
+
+            if not verification["valid"]:
+
+                failures = []
+
+                if local_username:
+
+                    if not verification["user_privilege_15"]:
+                        failures.append(
+                            "User is not privilege 15"
+                        )
+
+                    if not verification["user_scrypt"]:
+                        failures.append(
+                            "User secret is not Type 9/scrypt"
+                        )
+
+                if enable_secret:
+
+                    if not verification["enable_scrypt"]:
+                        failures.append(
+                            "Enable secret is not Type 9/scrypt"
+                        )
+
+                reason = "; ".join(failures)
+
+                print(
+                    f"Verification failed on {hostname}: "
+                    f"{reason}"
+                )
+
+                return {
+                    "ip": ip,
+                    "hostname": hostname,
+                    "site": device.get("site", ""),
+                    "status": "failed",
+                    "reason": reason,
+                }
+
+            print("Password configuration verified.")
+
             network_tools.save_config(ssh)
 
             return {
                             "ip": ip,
                             "hostname": hostname,
+                            "site": device.get("site", ""),
                             "status": "success",
                             "reason": ""
                         }
@@ -167,6 +233,8 @@ def process_device(
     
             return {
                 "ip": ip,
+                "hostname": hostname,
+                "site": device.get("site", ""),
                 "status": "failed",
                 "reason": "Authentication failure"
             }
@@ -179,6 +247,8 @@ def process_device(
 
         return {
             "ip": ip,
+            "hostname": hostname,
+            "site": device.get("site", ""),
             "status": "failed",
             "reason": "Connection timeout"
         }
@@ -191,6 +261,8 @@ def process_device(
 
         return {
             "ip": ip,
+            "hostname": hostname,
+            "site": device.get("site", ""),
             "status": "failed",
             "reason": str(e)
         }
@@ -216,36 +288,82 @@ def main():
         print("No matching devices found.")
         return
 
-    enable_secret = None
-    user_secret = None
-
-    if args.enable:
-        enable_secret = getpass.getpass(
-            "New enable secret: "
-        )
-
-        confirm = getpass.getpass(
-            "Confirm enable secret: "
-        )
-
-        if enable_secret != confirm:
-            raise SystemExit(
-                "Enable secrets do not match."
+    if args.env:
+        try:
+            new_credentials = (
+                network_tools.load_new_credentials(
+                    args.env
+                )
             )
 
-    if args.user:
-        user_secret = getpass.getpass(
-            f"New secret for {args.username}: "
-        )
-
-        confirm = getpass.getpass(
-            "Confirm user secret: "
-        )
-
-        if user_secret != confirm:
+        except (FileNotFoundError, ValueError) as error:
             raise SystemExit(
-                "User secrets do not match."
+                f"Unable to load credentials: {error}"
             )
+
+        if args.user:
+            local_username = (
+                new_credentials["username"]
+            )
+
+            user_secret = (
+                new_credentials["user_secret"]
+            )
+
+            if not local_username:
+                raise SystemExit(
+                    "NEW_DEVICE_USERNAME is missing "
+                    "from the .env file."
+                )
+
+            if not user_secret:
+                raise SystemExit(
+                    "NEW_DEVICE_PASSWORD is missing "
+                    "from the .env file."
+                )
+
+        if args.enable:
+            enable_secret = (
+                new_credentials["enable_secret"]
+            )
+
+            if not enable_secret:
+                raise SystemExit(
+                    "NEW_ENABLE_PASSWORD is missing "
+                    "from the .env file."
+                )
+
+    else:
+
+        if args.user:
+            local_username = args.username
+
+            user_secret = getpass.getpass(
+                f"New secret for {local_username}: "
+            )
+
+            confirm = getpass.getpass(
+                "Confirm user secret: "
+            )
+
+            if user_secret != confirm:
+                raise SystemExit(
+                    "User secrets do not match."
+                )
+
+        if args.enable:
+            enable_secret = getpass.getpass(
+                "New enable secret: "
+            )
+
+            confirm = getpass.getpass(
+                "Confirm enable secret: "
+            )
+
+            if enable_secret != confirm:
+                raise SystemExit(
+                    "Enable secrets do not match."
+                )
 
     print("\nDevices selected:")
 
@@ -256,18 +374,17 @@ def main():
             f"{device.get('site', '')}"
         )
 
-    if args.dry_run:
-        print("\nDRY RUN - no configurations will change.")
+        if args.dry_run:
+            print("\nDRY RUN - no configurations will change.")
 
-    else:
-        network_tools.user_input(
-            "\nProceed with password change? [y/n]: "
-        )
+        else:
+            network_tools.user_input(
+                "\nProceed with password change? [y/n]: "
+            )
 
-    results = []
-    dev_num = 1
+        results = []
+        dev_num = 1
 
-    for device in devices:
         result = process_device(
             device=device,
             dev_num=dev_num,
@@ -275,14 +392,12 @@ def main():
             username=username,
             password=password,
             enable_secret=enable_secret,
-            local_username=(
-                args.username if args.user else None
-            ),
+            local_username=local_username,
             user_secret=user_secret,
             dry_run=args.dry_run,
-        )
+            )
         dev_num += 1
-        
+            
         results.append(result)
 
     # Final report
@@ -353,6 +468,11 @@ def main():
             f"{result['reason']}"
         )
 
+    log_file = network_tools.write_results_log(
+            results=results,
+            script_name="remove_update_add_acc_class"
+        )
+    
     log_file = network_tools.write_results_csv(
         results=results,
         script_name="update_passwords",
