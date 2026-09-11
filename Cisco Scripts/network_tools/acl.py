@@ -390,11 +390,19 @@ def restore_vty_acl_references(ssh, references):
 
     return outputs
 
-def apply_acl_to_all_vty_lines(ssh, acl_name, vty_lines, direction="in"):
+def apply_acl_to_all_vty_lines(ssh, acl_name, vty_lines, direction="in", vrf_also=False):
     """Apply an ACL access-class to every discovered VTY line range."""
 
     if direction not in ("in", "out"):
         raise ValueError("VTY access-class direction must be 'in' or 'out'.")
+
+    if not isinstance(vrf_also, bool):
+        raise ValueError("vrf_also must be true or false.")
+
+    access_class_command = f"access-class {acl_name} {direction}"
+
+    if vrf_also:
+        access_class_command += " vrf-also"
 
     outputs = []
 
@@ -402,7 +410,7 @@ def apply_acl_to_all_vty_lines(ssh, acl_name, vty_lines, direction="in"):
 
         command_set = [
             line,
-            f"access-class {acl_name} {direction}"
+            access_class_command
         ]
 
         outputs.append(ssh.send_config_set(command_set))
@@ -419,12 +427,20 @@ def remove_acl(ssh, acl_name, acl_type):
         f"no ip access-list {acl_type} {acl_name}"
     ])
 
-def add_vty_acl_references(ssh, acl_name):
-    """Remove ACL access-class commands from VTY lines."""
+def add_vty_acl_references(ssh, acl_name, vrf_also=False):
+    """Apply an inbound ACL access-class to the VTY lines."""
+
+    if not isinstance(vrf_also, bool):
+        raise ValueError("vrf_also must be true or false.")
+
+    access_class_command = f"access-class {acl_name} in"
+
+    if vrf_also:
+        access_class_command += " vrf-also"
 
     command_set = [
         "line vty 0 15",
-        f"access-class {acl_name} in"
+        access_class_command
     ]
 
     output = ssh.send_config_set(command_set)

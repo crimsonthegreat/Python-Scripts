@@ -91,6 +91,10 @@ def process_device(
     """Process one device using one SSH connection."""
 
     ip = device["ip"]
+    access_class_vrf_also = device.get(
+        "access_class_vrf_also",
+        False
+    )
 
     print("\n" + "=" * 60)
     print(f"Processing Device {dev_num} of {num_of_devices}: {ip}")
@@ -196,7 +200,8 @@ def process_device(
                     ssh=ssh,
                     acl_name=acl_name,
                     vty_lines=vty_lines,
-                    direction="in"
+                    direction="in",
+                    vrf_also=access_class_vrf_also
             )
             
             # Save
