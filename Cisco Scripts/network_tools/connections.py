@@ -1,4 +1,5 @@
 import subprocess
+import socket
 
 def build_connection_param(device, username, password):
     """Build Netmiko connection dictionary."""
@@ -53,3 +54,20 @@ def get_hostname(ssh):
         .strip()
         .rstrip("#>")
     )
+
+def check_tcp_port(ip, port=22, timeout=3):
+    """Check whether a TCP port is reachable."""
+
+    try:
+        with socket.create_connection(
+            (ip, port),
+            timeout=timeout,
+        ):
+            return True
+
+    except (
+        socket.timeout,
+        ConnectionRefusedError,
+        OSError,
+    ):
+        return False

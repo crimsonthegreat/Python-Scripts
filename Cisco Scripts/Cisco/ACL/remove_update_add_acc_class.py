@@ -115,6 +115,21 @@ def process_device(
 
     print(f"{ip} is reachable.")
 
+    print(f"Checking SSH on {ip}:22...")
+
+    if not network_tools.check_tcp_port(ip, 22):
+        print(f"TCP/22 is not reachable on {ip}.")
+
+        return {
+            "ip": ip,
+            "hostname": device.get("hostname", ""),
+            "site": device.get("site", ""),
+            "status": "failed",
+            "reason": "TCP/22 unreachable",
+        }
+
+    print(f"SSH is reachable on {ip}:22.")
+    
     cisco = network_tools.build_connection_param(
         device=device,
         username=username,
