@@ -106,6 +106,7 @@ def process_device(
     """Update passwords on a single device."""
 
     ip = device["ip"]
+    hostname = device.get("hostname", "Unknown")
     
     print("\n" + "=" * 60)
     print(f"Processing Device {dev_num} of {num_of_devices}: {ip}")
@@ -374,16 +375,18 @@ def main():
             f"{device.get('site', '')}"
         )
 
-        if args.dry_run:
-            print("\nDRY RUN - no configurations will change.")
+    if args.dry_run:
+        print("\nDRY RUN - no configurations will change.")
 
-        else:
-            network_tools.user_input(
-                "\nProceed with password change? [y/n]: "
-            )
+    else:
+        network_tools.user_input(
+            "\nProceed with password change? [y/n]: "
+        )
 
         results = []
         dev_num = 1
+
+    for device in devices:
 
         result = process_device(
             device=device,
@@ -396,6 +399,7 @@ def main():
             user_secret=user_secret,
             dry_run=args.dry_run,
             )
+        
         dev_num += 1
             
         results.append(result)
