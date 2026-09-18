@@ -126,7 +126,7 @@ def process_device(
 
     print(f"{ip} is reachable.")
 
-    print(f"Checking SSH on {ip}:22...")
+    print(f"\nChecking SSH on {ip}:22...")
 
     if not network_tools.check_tcp_port(ip, 22):
         print(f"TCP/22 is not reachable on {ip}.")
