@@ -489,7 +489,7 @@ def main():
 
     log_file = network_tools.write_results_log(
             results=results,
-            script_name="remove_update_add_acc_class"
+            script_name="update_passwords"
         )
     
     log_file = network_tools.write_results_csv(
