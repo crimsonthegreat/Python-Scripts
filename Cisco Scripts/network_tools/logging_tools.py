@@ -25,6 +25,11 @@ def write_results_log(
         if result.get("status") == "success"
     ]
 
+    skipped = [
+        result for result in results
+        if result.get('status') == "skipped"
+    ]
+
     failed = [
         result for result in results
         if result.get("status") == "failed"
@@ -42,21 +47,29 @@ def write_results_log(
 
         file.write(f"Devices Processed: {len(results)}\n")
         file.write(f"Successful: {len(successful)}\n")
+        file.write(f"Skipped: {len(skipped)}\n")
         file.write(f"Failed: {len(failed)}\n")
         file.write("=" * 60 + "\n\n")
 
-        for result in results:
-            hostname = result.get("hostname", "Unknown")
-            ip = result.get("ip", "Unknown")
-            status = result.get("status", "unknown").upper()
-            reason = result.get("reason", "")
+        for heading, group in (
+            ("Successful", successful),
+            ("Skipped", skipped),
+            ("Failed", failed),
+        ):
+            file.write(f"{heading}\n")
+            file.write("=" * 60 + "\n")
 
-            file.write(
-                f"[{status}] {hostname} - {ip}"
-            )
+            for result in group:
+                hostname = result.get("hostname", "Unknown")
+                ip = result.get("ip", "Unknown")
+                reason = result.get("reason", "")
 
-            if reason:
-                file.write(f" - {reason}")
+                file.write(f"{hostname} - {ip}")
+
+                if reason:
+                    file.write(f" - {reason}")
+
+                file.write("\n")
 
             file.write("\n")
 

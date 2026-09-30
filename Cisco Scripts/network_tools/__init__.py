@@ -24,6 +24,7 @@ from .connections import (
     ping_device,
     save_config,
     get_hostname,
+    check_tcp_port,
 )
 
 # Prompts
@@ -108,6 +109,7 @@ __all__ = [
     "ping_device",
     "save_config",
     "get_hostname",
+    "check_tcp_port",
 
     # Prompts
     "user_input",

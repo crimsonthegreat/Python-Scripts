@@ -2,27 +2,15 @@
 # $interface = "1.0"
 
 """
-SecureCRT: discover a Cisco or Linux hostname and save an IP-based session.
+SecureCRT: discover a hostname from the existing prompt and save an IP-based session.
 
-Recommended setup
------------------
-1. Edit SESSION_FOLDER below if desired. Use an empty string to save sessions
-   at the root of Session Manager.
-2. In SecureCRT, open Options > Edit Default Session > Connection > Logon
-   Actions, enable "Run script", and select this file.
-3. Connect to a previously unknown device with Quick Connect and its IP address.
-
-After authentication, the script queries the Cisco hostname and creates a saved
-Session Manager entry while retaining the IP address as the SSH destination.
-
-The script operates on either an unsaved Quick Connect session (path "Default")
-or an IP-named session that SecureCRT created because "Save session" was checked
-in Quick Connect. Hostname-named saved sessions are ignored on later connects.
-
-Supported targets:
-- Cisco IOS, IOS-XE, NX-OS, and ASA devices whose CLI accepts
-  "show running-config | include ^hostname" from the authenticated EXEC level.
-- Linux systems with a POSIX-style shell and the "hostname" command.
+Set this file as the logon script under Connection > Logon Actions.
+Supported prompts include Cisco switch#, ISE hostname/user#,
+Palo Alto admin@firewall(active)>,
+and Linux user@server:~$ or [user@server ~]$.
+No commands or keystrokes are sent to the device. Linux prompts must include
+the hostname. Discovery waits up to COMMAND_TIMEOUT_SECONDS for a prompt.
+Saved sessions retain their current folder when their hostname changes.
 """
 
 import datetime
@@ -47,7 +35,7 @@ INCLUDE_IP_IN_SESSION_NAME = True
 # Change to False after testing if you do not want success notifications.
 SHOW_SUCCESS_MESSAGE = False
 
-# Maximum time to wait for CLI output.
+# Maximum time to wait for a recognizable prompt.
 COMMAND_TIMEOUT_SECONDS = 15
 
 # Stale entries are backed up before deferred deletion.
@@ -99,91 +87,54 @@ def sanitize_session_component(value):
     return value
 
 
-def get_prompt(screen):
-    """Ask the device to redraw its prompt and return the visible prompt."""
-    screen.Send("\r")
-    if not screen.WaitForCursor(COMMAND_TIMEOUT_SECONDS):
-        return ""
-
-    # Give SecureCRT a short opportunity to receive the remainder of the line.
-    screen.WaitForCursor(1)
-    row = screen.CurrentRow
-    column = screen.CurrentColumn
-    if column <= 1:
-        return ""
-
-    prompt = screen.Get(row, 1, row, column - 1)
-    return clean_terminal_text(prompt).strip()
-
-
-def run_command(screen, command, prompt):
-    """Send a command, consume its terminal echo, and return its output."""
-    screen.Send(command + "\r")
-
-    # In synchronous mode, the previously discovered prompt can still be in
-    # SecureCRT's receive buffer. Waiting for the command echo consumes that
-    # stale prompt and positions ReadString immediately before command output.
-    if not screen.WaitForString(command, COMMAND_TIMEOUT_SECONDS):
-        return ""
-
-    return clean_terminal_text(
-        screen.ReadString(prompt, COMMAND_TIMEOUT_SECONDS)
-    )
-
-
-def discover_cisco_hostname(screen, prompt):
-    """Query and parse a configured Cisco hostname."""
-    command = "show running-config | include ^hostname"
-    output = run_command(screen, command, prompt)
-
-    for line in output.split("\n"):
-        match = re.match(r"^\s*hostname\s+(\S+)\s*$", line, re.IGNORECASE)
-        if match:
-            return sanitize_session_component(match.group(1))
-
-    return ""
-
-
-def discover_linux_hostname(screen):
-    """Read Linux hostname output without depending on the shell prompt."""
-    command = "hostname -s"
-    screen.Send(command + "\r")
-
-    # Consume everything through the echoed command. This also clears any old
-    # prompt text left in SecureCRT's synchronous receive buffer.
-    if not screen.WaitForString(command, COMMAND_TIMEOUT_SECONDS):
-        return ""
-
-    # The first newline completes the echoed command. One of the following
-    # lines contains the hostname. Reading by line avoids matching a colored,
-    # multi-line, or otherwise customized shell prompt.
-    for _ in range(6):
-        line = screen.ReadString("\n", COMMAND_TIMEOUT_SECONDS)
-        candidate = clean_terminal_text(line).strip()
-        if re.match(r"^[A-Za-z0-9][A-Za-z0-9._-]*$", candidate):
-            return sanitize_session_component(candidate)
-
-    return ""
-
-
 def discover_hostname(screen, prompt):
-    """Select the most likely discovery method and fall back safely."""
-    prompt_terminator = prompt[-1:]
+    """Extract a hostname from a supported prompt without sending input."""
+    prompt = clean_terminal_text(prompt).strip()
+    # Cisco ISE / ADE-OS: hostname/user#
+    match = re.fullmatch(
+        r"(?P<hostname>[A-Za-z0-9_.-]+)/[^/\s#]+[ \t]*#",
+        prompt,
+    )
+    if match:
+        return sanitize_session_component(match.group("hostname"))
 
-    # Non-root Linux shells normally end in $ or %. Trying Linux first avoids
-    # sending a Cisco command to the shell and waiting for a timeout.
-    if prompt_terminator in ("$", "%"):
-        return discover_linux_hostname(screen)
+    match = re.fullmatch(
+        r"\[?[^@\s]+@"
+        r"(?P<hostname>[A-Za-z0-9_.-]+)"
+        r"(?:\([^()\r\n]*\))?"
+        r"(?::[^\r\n]*|[ \t]+[^\r\n]*)?"
+        r"\]?[ \t]*[#$%>]",
+        prompt,
+    )
+    if match:
+        return sanitize_session_component(match.group("hostname"))
 
-    # Cisco privileged prompts and Linux root prompts both commonly end in #.
-    # Try Cisco first, then use the Linux hostname command as a fallback.
-    hostname = discover_cisco_hostname(screen, prompt)
-    if hostname:
-        return hostname
+    match = re.fullmatch(
+        r"(?P<hostname>[A-Za-z0-9_.-]+)"
+        r"(?:\([^()\r\n]*\))?"
+        r"[ \t]*[#>]",
+        prompt,
+    )
+    if match:
+        return sanitize_session_component(match.group("hostname"))
+    return ""
 
-    if prompt_terminator == "#":
-        return discover_linux_hostname(screen)
 
+def get_prompt(screen):
+    """Process incoming text and inspect the prompt without sending input."""
+    for _ in range(COMMAND_TIMEOUT_SECONDS):
+        if not crt.Session.Connected:
+            return ""
+        screen.WaitForString("__AUTOSAVE_PROMPT_SENTINEL__", 1)
+        row = screen.CurrentRow
+        column = screen.CurrentColumn
+        if column <= 1:
+            continue
+        prompt = clean_terminal_text(
+            screen.Get(row, 1, row, column - 1)
+        ).strip()
+        if discover_hostname(screen, prompt):
+            return prompt
     return ""
 
 
@@ -357,18 +308,16 @@ def main():
 
     try:
         prompt = get_prompt(screen)
-        if prompt and prompt[-1:] in ("#", ">", "$", "%"):
-            hostname = discover_hostname(screen, prompt)
-        else:
-            # Linux prompts may contain colors, span multiple lines, end in an
-            # unusual character, or not be fully drawn when a logon script
-            # starts. Marker-based discovery does not require prompt matching.
-            hostname = discover_linux_hostname(screen)
+        hostname = discover_hostname(screen, prompt)
         if not hostname:
             show_error(
-                "The hostname could not be read. Confirm that your account can run "
-                "the appropriate command:\n\nCisco:\n"
-                "show running-config | include ^hostname\n\nLinux:\nhostname -s"
+                "The hostname could not be extracted from the prompt.\n\n"
+                "Supported examples:\n"
+                "Cisco: switch#\n"
+                "Cisco ISE: hostname/user#\n"
+                "Palo Alto: admin@firewall(active)>\n"
+                "Linux: user@server:~$ or [user@server ~]$\n\n"
+                "Linux prompts must include the hostname."
             )
             return
 

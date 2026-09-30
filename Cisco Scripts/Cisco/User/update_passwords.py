@@ -106,6 +106,7 @@ def process_device(
     """Update passwords on a single device."""
 
     ip = device["ip"]
+    hostname = device.get("hostname", "Unknown")
     
     print("\n" + "=" * 60)
     print(f"Processing Device {dev_num} of {num_of_devices}: {ip}")
@@ -124,6 +125,21 @@ def process_device(
         }
 
     print(f"{ip} is reachable.")
+
+    print(f"\nChecking SSH on {ip}:22...")
+
+    if not network_tools.check_tcp_port(ip, 22):
+        print(f"TCP/22 is not reachable on {ip}.")
+
+        return {
+            "ip": ip,
+            "hostname": device.get("hostname", ""),
+            "site": device.get("site", ""),
+            "status": "failed",
+            "reason": "TCP/22 unreachable",
+        }
+
+    print(f"SSH is reachable on {ip}:22.")
 
     cisco = network_tools.build_connection_param(
         device=device,
@@ -374,16 +390,18 @@ def main():
             f"{device.get('site', '')}"
         )
 
-        if args.dry_run:
-            print("\nDRY RUN - no configurations will change.")
+    if args.dry_run:
+        print("\nDRY RUN - no configurations will change.")
 
-        else:
-            network_tools.user_input(
-                "\nProceed with password change? [y/n]: "
-            )
+    else:
+        network_tools.user_input(
+            "\nProceed with password change? [y/n]: "
+        )
 
         results = []
         dev_num = 1
+
+    for device in devices:
 
         result = process_device(
             device=device,
@@ -396,6 +414,7 @@ def main():
             user_secret=user_secret,
             dry_run=args.dry_run,
             )
+        
         dev_num += 1
             
         results.append(result)
@@ -470,7 +489,7 @@ def main():
 
     log_file = network_tools.write_results_log(
             results=results,
-            script_name="remove_update_add_acc_class"
+            script_name="update_passwords"
         )
     
     log_file = network_tools.write_results_csv(

@@ -91,6 +91,10 @@ def process_device(
     """Process one device using one SSH connection."""
 
     ip = device["ip"]
+    access_class_vrf_also = device.get(
+        "access_class_vrf_also",
+        False
+    )
 
     print("\n" + "=" * 60)
     print(f"Processing Device {dev_num} of {num_of_devices}: {ip}")
@@ -110,6 +114,21 @@ def process_device(
         }
 
     print(f"{ip} is reachable.")
+
+    print(f"\nChecking SSH on {ip}:22...")
+
+    if not network_tools.check_tcp_port(ip, 22):
+        print(f"TCP/22 is not reachable on {ip}.")
+
+        return {
+            "ip": ip,
+            "hostname": device.get("hostname", ""),
+            "site": device.get("site", ""),
+            "status": "failed",
+            "reason": "TCP/22 unreachable",
+        }
+
+    print(f"SSH is reachable on {ip}:22.")
 
     cisco = network_tools.build_connection_param(
         device=device,
@@ -196,7 +215,8 @@ def process_device(
                     ssh=ssh,
                     acl_name=acl_name,
                     vty_lines=vty_lines,
-                    direction="in"
+                    direction="in",
+                    vrf_also=access_class_vrf_also
             )
             
             # Save
