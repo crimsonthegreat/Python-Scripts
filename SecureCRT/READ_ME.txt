@@ -1,5 +1,5 @@
 Log Scheme
-%Y%M%D_%h%m_%H.log
+/path/to/save/logs/%Y%M%D_%h%m_%H.log
 
 
 Color: Cisco Blue
@@ -12,13 +12,11 @@ Keyword Highlighting:
 
 Mac:
 
-- Navigate to /Users/username/Library/Application Support/VanDyke/SecureCRT/Config/
+- Navigate to /Users/username/Library/Application Support/VanDyke/SecureCRT/Config/Keywords
 
 - If this folder doesn't exist yet, you'll have to create it
 
 - Copy "Cisco.ini" to folder
-
-- Navigate to VanDyke --> Config --> Keywords
 
 
 Windows:
@@ -42,5 +40,6 @@ SecureCRT_Auto_Save_Session_Hostname.py
 Saves the session with the hostname for better documentation.
 Current configuration will save with hostname [ip address].
 Change INCLUDE_IP_IN_SESSION_NAME to False to only save the session name.
+Change SECURECRT_CONFIG_DIRECTORY to config directory to allow automated clean up of stale sessions.
 Script will run everytime a session is created and rename/ remove old sessions as the hostname is changed.
 """
